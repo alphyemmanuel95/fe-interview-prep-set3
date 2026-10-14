@@ -248,6 +248,22 @@ describe('UploaderPage', () => {
     expect(keysByFile.get('file-1.txt')).not.toEqual(keysByFile.get('file-2.txt'));
   });
 
+  it('treats an abort it did not request as a failed attempt', async () => {
+    enableDeterministicTimers();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const transport = vi.fn<UploadTransport>(() => Promise.resolve({ kind: 'aborted' }));
+    render(<UploaderPage transport={transport} />);
+
+    await user.upload(screen.getByLabelText('Choose files'), createFiles(1));
+    await advanceTime(0);
+
+    expect(
+      screen.getByText(
+        `Attempt 1 of ${MAX_ATTEMPTS} failed (Upload was interrupted). Retrying in 1 s`,
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('clears the backoff timer when a retrying upload is cancelled', async () => {
     enableDeterministicTimers();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });

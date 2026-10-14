@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useReducer, useRef } from 'react';
+import { assertNever } from '../../../shared/assertNever';
 import type { UploadTransport } from '../api/uploadTransport';
 import type { UploadItem, UploadQueue } from '../model/uploadQueue';
 import { loadQueue, saveQueue, toPersistedQueue } from '../model/persistence';
@@ -11,6 +12,8 @@ export type UploadQueueControls = Readonly<{
   retry: (id: string) => void;
   remove: (id: string) => void;
 }>;
+
+const UNEXPECTED_ABORT_ERROR = 'Upload was interrupted';
 
 function createId(): string {
   return crypto.randomUUID();
@@ -49,10 +52,25 @@ export function useUploadQueue(transport: UploadTransport): UploadQueueControls 
         return;
       }
       controllersRef.current.delete(id);
-      if (outcome.kind === 'success') {
-        dispatch({ type: 'succeeded', id });
-      } else if (outcome.kind === 'error') {
-        dispatch({ type: 'attemptFailed', id, error: outcome.message, failedAt: Date.now() });
+      switch (outcome.kind) {
+        case 'success':
+          dispatch({ type: 'succeeded', id });
+          return;
+        case 'error':
+          dispatch({ type: 'attemptFailed', id, error: outcome.message, failedAt: Date.now() });
+          return;
+        case 'aborted':
+          // We didn't abort it (our aborts unregister the controller first), so something else
+          // did, e.g. the browser. Treat it as a failed attempt rather than leave it "uploading".
+          dispatch({
+            type: 'attemptFailed',
+            id,
+            error: UNEXPECTED_ABORT_ERROR,
+            failedAt: Date.now(),
+          });
+          return;
+        default:
+          assertNever(outcome);
       }
     });
   });
