@@ -92,7 +92,7 @@ export function UploadRow({ item, onCancel, onRetry, onRemove }: UploadRowProps)
   }
 
   return (
-    <li className={`upload-row upload-row--${item.status}`}>
+    <li className={`upload-row upload-row--${item.status}`} data-item-id={item.id}>
       <div className="upload-row__header">
         <span className="upload-row__name">{item.name}</span>
         <span className="upload-row__size">{formatFileSize(item.size)}</span>

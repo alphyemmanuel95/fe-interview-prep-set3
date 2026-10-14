@@ -18,12 +18,23 @@ type UploaderPageProps = Readonly<{
 export function UploaderPage({ transport = xhrUploadTransport }: UploaderPageProps): JSX.Element {
   const { items, addFiles, cancel, retry, remove } = useUploadQueue(transport);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   useBeforeUnloadWarning(items.some(isActive));
 
+  // The focused Remove button disappears with its row, so focus moves to the neighbouring row
+  // (next, else previous), or to the file picker when the list becomes empty. The neighbour is
+  // focused before the re-render; it stays mounted, so focus is never dropped to the body.
   function handleRemove(id: string): void {
+    const index = items.findIndex((item) => item.id === id);
+    const neighbourId = (items[index + 1] ?? items[index - 1])?.id;
+    const neighbourRow = Array.from(listRef.current?.children ?? []).find(
+      (row) =>
+        neighbourId !== undefined &&
+        row instanceof HTMLElement &&
+        row.dataset['itemId'] === neighbourId,
+    );
     remove(id);
-    // The focused Remove button disappears with its row; keep keyboard users in the flow.
-    fileInputRef.current?.focus();
+    (neighbourRow?.querySelector('button') ?? fileInputRef.current)?.focus();
   }
 
   return (
@@ -37,7 +48,7 @@ export function UploaderPage({ transport = xhrUploadTransport }: UploaderPagePro
         {formatQueueSummary(items)}
       </p>
       {items.length > 0 && (
-        <ul className="uploader__list" aria-label="Upload queue">
+        <ul ref={listRef} className="uploader__list" aria-label="Upload queue">
           {items.map((item) => (
             <UploadRow
               key={item.id}

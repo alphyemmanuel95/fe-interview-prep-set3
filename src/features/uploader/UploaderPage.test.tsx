@@ -196,6 +196,27 @@ describe('UploaderPage', () => {
     expect(uploads).toHaveLength(4);
   });
 
+  it('moves focus to the neighbouring row after removing one', async () => {
+    saveQueue(
+      ['a.txt', 'b.txt', 'c.txt'].map((name) => ({
+        id: name,
+        name,
+        size: 1,
+        idempotencyKey: `key-${name}`,
+        status: 'done' as const,
+      })),
+    );
+    const user = userEvent.setup();
+    render(<UploaderPage transport={createControllableTransport().transport} />);
+
+    await user.click(screen.getByRole('button', { name: 'Remove b.txt' }));
+    expect(screen.getByRole('button', { name: 'Remove c.txt' })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Remove c.txt' }));
+    expect(screen.getByRole('button', { name: 'Remove a.txt' })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Remove a.txt' }));
+    expect(screen.getByLabelText('Choose files')).toHaveFocus();
+  });
+
   it('keeps focus in the row when an upload finishes on its own', async () => {
     const user = userEvent.setup();
     const { transport, uploads } = createControllableTransport();
