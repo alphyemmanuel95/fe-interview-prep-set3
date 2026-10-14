@@ -212,7 +212,7 @@ export function createMockFileSystem(options: MockFileSystemOptions): MockFileSy
   ): Promise<readonly FileNode[]> => {
     await delay(options.latencyMs, signal);
     if (pendingFailures.delete(folderId)) {
-      throw new Error(`Could not reach "${folderId}". Try again.`);
+      throw new Error(`Could not reach "${folderId}".`);
     }
     const children = childrenByFolderId.get(folderId);
     if (children === undefined) {
