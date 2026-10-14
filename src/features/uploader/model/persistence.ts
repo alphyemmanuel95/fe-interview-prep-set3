@@ -2,7 +2,8 @@ import { loadFromStorage, saveToStorage } from '../../../shared/storage';
 import type { UploadItem, UploadQueue, UploadStatus } from './uploadQueue';
 
 export const QUEUE_STORAGE_KEY = 'uploader.queue';
-export const QUEUE_STORAGE_VERSION = 1;
+// v2 added lastModified; v1 queues fall back to empty rather than re-attach on name and size.
+export const QUEUE_STORAGE_VERSION = 2;
 
 // Only what survives a reload is stored. File objects can't be serialised (and the browser won't
 // hand the same file back without the user picking it), progress and timers are transient.
@@ -10,6 +11,7 @@ export type PersistedUpload = Readonly<{
   id: string;
   name: string;
   size: number;
+  lastModified: number;
   idempotencyKey: string;
   status: UploadStatus;
 }>;
@@ -39,6 +41,8 @@ function isPersistedUpload(value: unknown): value is PersistedUpload {
     typeof value.name === 'string' &&
     'size' in value &&
     typeof value.size === 'number' &&
+    'lastModified' in value &&
+    typeof value.lastModified === 'number' &&
     'idempotencyKey' in value &&
     typeof value.idempotencyKey === 'string' &&
     'status' in value &&
@@ -51,10 +55,11 @@ function isPersistedQueue(value: unknown): value is readonly PersistedUpload[] {
 }
 
 export function toPersistedQueue(queue: UploadQueue): readonly PersistedUpload[] {
-  return queue.map(({ id, name, size, idempotencyKey, status }) => ({
+  return queue.map(({ id, name, size, lastModified, idempotencyKey, status }) => ({
     id,
     name,
     size,
+    lastModified,
     idempotencyKey,
     status,
   }));

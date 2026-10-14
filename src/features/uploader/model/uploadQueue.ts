@@ -12,6 +12,8 @@ type UploadItemBase = Readonly<{
   id: string;
   name: string;
   size: number;
+  // With name and size, identifies the same file when it is re-selected after a reload.
+  lastModified: number;
   // Generated once when the file is added and reused for every retry, so the server can
   // recognise a repeat of a request it already completed and never store the file twice.
   idempotencyKey: string;
@@ -57,8 +59,15 @@ export type UploadQueueAction =
   | Readonly<{ type: 'removed'; id: string }>;
 
 // Rebuilding from the shared fields drops variant-only fields (progress, error) on transition.
-function toBase({ id, name, size, idempotencyKey, attempt }: UploadItem): UploadItemBase {
-  return { id, name, size, idempotencyKey, attempt };
+function toBase({
+  id,
+  name,
+  size,
+  lastModified,
+  idempotencyKey,
+  attempt,
+}: UploadItem): UploadItemBase {
+  return { id, name, size, lastModified, idempotencyKey, attempt };
 }
 
 export type FileAssignment = Readonly<{ itemId: string; file: File }>;
@@ -69,8 +78,20 @@ export type AddedFilesPlan = Readonly<{
   assignments: readonly FileAssignment[];
 }>;
 
-// A file with the same name and size as an item waiting for re-select is treated as that file:
-// it resumes under the item's original idempotency key, so a request the server completed
+// Name, size and last-modified time together stand in for file identity: the browser exposes no
+// stable file id, and hashing the contents would mean reading whole files up front. Checking
+// lastModified stops an edited file of the same size resuming under the old key, where the server
+// would answer "duplicate" and silently keep the old content.
+export function isSameFile(
+  item: UploadItem,
+  file: Readonly<{ name: string; size: number; lastModified: number }>,
+): boolean {
+  return (
+    item.name === file.name && item.size === file.size && item.lastModified === file.lastModified
+  );
+}
+
+// A file matching an item waiting for re-select is treated as that file: it resumes under the item's original idempotency key, so a request the server completed
 // before the reload is recognised instead of stored twice. Anything else becomes a new item.
 export function planAddedFiles(
   queue: UploadQueue,
@@ -84,14 +105,14 @@ export function planAddedFiles(
 
   for (const file of files) {
     const match = waiting.find(
-      (item) =>
-        item.name === file.name && item.size === file.size && !reattachedIds.includes(item.id),
+      (item) => isSameFile(item, file) && !reattachedIds.includes(item.id),
     );
     if (match === undefined) {
       const item: UploadItem = {
         id: createId(),
         name: file.name,
         size: file.size,
+        lastModified: file.lastModified,
         idempotencyKey: createId(),
         attempt: 0,
         status: 'queued',

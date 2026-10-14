@@ -16,6 +16,7 @@ function queued(id: string): UploadItem {
     id,
     name: `${id}.txt`,
     size: 10,
+    lastModified: 0,
     idempotencyKey: `key-${id}`,
     attempt: 0,
     status: 'queued',
@@ -163,8 +164,9 @@ describe('planAddedFiles', () => {
   let nextId = 0;
   const createId = (): string => `new-${String(++nextId)}`;
 
-  it('re-attaches a file with the same name and size under its original key', () => {
-    const plan = planAddedFiles([waiting], [new File(['0123456789'], 'a.txt')], createId);
+  it('re-attaches the same file (name, size, last modified) under its original key', () => {
+    const sameFile = new File(['0123456789'], 'a.txt', { lastModified: 0 });
+    const plan = planAddedFiles([waiting], [sameFile], createId);
 
     expect(plan.newItems).toEqual([]);
     expect(plan.reattachedIds).toEqual(['a']);
@@ -174,8 +176,11 @@ describe('planAddedFiles', () => {
     ).toEqual([queued('a')]);
   });
 
-  it('adds a different file as a new item with a fresh idempotency key', () => {
-    const plan = planAddedFiles([waiting], [new File(['x'], 'a.txt')], createId);
+  it.each([
+    ['a different size', new File(['x'], 'a.txt', { lastModified: 0 })],
+    ['the same size but edited since', new File(['9876543210'], 'a.txt', { lastModified: 1 })],
+  ])('adds a file with %s as a new item with a fresh idempotency key', (_, file) => {
+    const plan = planAddedFiles([waiting], [file], createId);
 
     expect(plan.reattachedIds).toEqual([]);
     expect(plan.newItems).toHaveLength(1);

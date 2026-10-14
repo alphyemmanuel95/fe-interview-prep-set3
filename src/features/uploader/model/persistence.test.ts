@@ -11,7 +11,7 @@ import {
 import type { UploadItem } from './uploadQueue';
 
 function persisted(id: string, status: PersistedUpload['status']): PersistedUpload {
-  return { id, name: `${id}.txt`, size: 10, idempotencyKey: `key-${id}`, status };
+  return { id, name: `${id}.txt`, size: 10, lastModified: 0, idempotencyKey: `key-${id}`, status };
 }
 
 describe('upload queue persistence', () => {

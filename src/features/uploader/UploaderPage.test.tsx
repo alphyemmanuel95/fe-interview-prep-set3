@@ -45,6 +45,7 @@ function createControllableTransport() {
   };
 }
 
+const LAST_MODIFIED = 1_700_000_000_000;
 const SERVER_ERROR: UploadOutcome = { kind: 'error', message: 'Server responded 500' };
 
 function createFiles(count: number): File[] {
@@ -131,8 +132,22 @@ describe('UploaderPage', () => {
 
   it('restores the queue after a reload and resumes a re-selected file with its key', async () => {
     saveQueue([
-      { id: 'a', name: 'report.pdf', size: 3, idempotencyKey: 'key-report', status: 'uploading' },
-      { id: 'b', name: 'notes.txt', size: 1, idempotencyKey: 'key-notes', status: 'done' },
+      {
+        id: 'a',
+        name: 'report.pdf',
+        size: 3,
+        lastModified: LAST_MODIFIED,
+        idempotencyKey: 'key-report',
+        status: 'uploading',
+      },
+      {
+        id: 'b',
+        name: 'notes.txt',
+        size: 1,
+        lastModified: LAST_MODIFIED,
+        idempotencyKey: 'key-notes',
+        status: 'done',
+      },
     ]);
     const user = userEvent.setup();
     const { transport, uploads } = createControllableTransport();
@@ -142,12 +157,21 @@ describe('UploaderPage', () => {
     expect(screen.getByText('Uploaded')).toBeInTheDocument();
     expect(uploads).toHaveLength(0);
 
-    await user.upload(screen.getByLabelText('Choose files'), new File(['abc'], 'report.pdf'));
-
+    // Same name and size but edited since: a different file, so it must not reuse the old key.
+    const edited = new File(['xyz'], 'report.pdf', { lastModified: LAST_MODIFIED + 1 });
+    await user.upload(screen.getByLabelText('Choose files'), edited);
     await waitFor(() => {
-      expect(uploads[0]?.request.idempotencyKey).toBe('key-report');
+      expect(uploads).toHaveLength(1);
     });
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(uploads[0]?.request.idempotencyKey).not.toBe('key-report');
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+
+    const original = new File(['abc'], 'report.pdf', { lastModified: LAST_MODIFIED });
+    await user.upload(screen.getByLabelText('Choose files'), original);
+    await waitFor(() => {
+      expect(uploads[1]?.request.idempotencyKey).toBe('key-report');
+    });
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
   });
 
   it('warns before closing the tab only while uploads are running', async () => {
@@ -206,6 +230,7 @@ describe('UploaderPage', () => {
         id: name,
         name,
         size: 1,
+        lastModified: LAST_MODIFIED,
         idempotencyKey: `key-${name}`,
         status: 'done' as const,
       })),

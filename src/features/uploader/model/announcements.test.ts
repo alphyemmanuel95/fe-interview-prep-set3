@@ -3,7 +3,15 @@ import { createUploaderState, describeQueueChange, uploaderReducer } from './ann
 import type { UploadItem } from './uploadQueue';
 
 function item(id: string, status: 'queued' | 'done' | 'cancelled'): UploadItem {
-  return { id, name: `${id}.txt`, size: 1, idempotencyKey: `key-${id}`, attempt: 0, status };
+  return {
+    id,
+    name: `${id}.txt`,
+    size: 1,
+    lastModified: 0,
+    idempotencyKey: `key-${id}`,
+    attempt: 0,
+    status,
+  };
 }
 
 function failed(id: string): UploadItem {
