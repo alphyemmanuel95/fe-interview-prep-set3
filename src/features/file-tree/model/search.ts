@@ -1,7 +1,7 @@
 import type { SearchIndexEntry } from '../api/mockFileSystem';
 
 export type TreeSearchResult = Readonly<{
-  matchCount: number;
+  matchIds: ReadonlySet<string>;
   /** Matches plus every ancestor folder of a match: what the filtered tree shows. */
   visibleIds: ReadonlySet<string>;
   /** Ancestors of matches: opened while searching so each match is actually reachable. */
@@ -22,21 +22,21 @@ export function searchTree(
   if (needle === '') {
     return null;
   }
-  let matchCount = 0;
+  const matchIds = new Set<string>();
   const visibleIds = new Set<string>();
   const expandedIds = new Set<string>();
   for (const entry of index) {
     if (!entry.label.toLocaleLowerCase().includes(needle)) {
       continue;
     }
-    matchCount += 1;
+    matchIds.add(entry.id);
     visibleIds.add(entry.id);
     for (const ancestorId of entry.ancestorIds) {
       visibleIds.add(ancestorId);
       expandedIds.add(ancestorId);
     }
   }
-  return { matchCount, visibleIds, expandedIds };
+  return { matchIds, visibleIds, expandedIds };
 }
 
 /** Splits `text` around every case-insensitive occurrence of `query` for highlighting. */

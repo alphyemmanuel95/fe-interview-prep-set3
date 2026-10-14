@@ -12,7 +12,12 @@ import { getTreeKeyAction, type TreeKeyAction } from './treeNavigation';
 import { TreeErrorRow, TreeItemRow } from './TreeRow';
 import { useChildrenLoader, type LoadChildren } from './useChildrenLoader';
 import { useRovingFocus } from './useRovingFocus';
-import { ancestorIdsOf, flattenVisibleRows, loadStatusMessage } from './visibleRows';
+import {
+  ancestorIdsOf,
+  flattenVisibleRows,
+  loadStatusMessage,
+  type TreeFilter,
+} from './visibleRows';
 import './Tree.css';
 
 // Generic over the item type: nothing here knows about files. Callers describe their data through
@@ -29,14 +34,14 @@ export type TreeProps<T> = Readonly<{
   onExpandedChange: (id: string, isExpanded: boolean) => void;
   /** Receives the selected row's ancestors (outermost first), so callers can keep it reachable. */
   onSelect: (id: string, ancestorIds: readonly string[]) => void;
-  /** Restricts rendering to these ids (e.g. search results plus their ancestors). */
-  visibleIds?: ReadonlySet<string> | undefined;
+  /** Restricts rendering to search matches and their ancestors; see `TreeFilter`. */
+  filter?: TreeFilter | undefined;
   renderIcon?: (item: T, isExpanded: boolean) => ReactNode;
   renderLabel?: (item: T) => ReactNode;
 }>;
 
 export function Tree<T>(props: TreeProps<T>): JSX.Element {
-  const { rootItems, getId, getLabel, isBranch, expandedIds, selectedId, visibleIds } = props;
+  const { rootItems, getId, getLabel, isBranch, expandedIds, selectedId, filter } = props;
   const { onExpandedChange, onSelect } = props;
   const { childrenById, load } = useChildrenLoader(props.loadChildren, getId);
 
@@ -47,9 +52,9 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
         accessors: { getId, getLabel, isBranch },
         expandedIds,
         childrenById,
-        visibleIds,
+        filter,
       }),
-    [rootItems, getId, getLabel, isBranch, expandedIds, childrenById, visibleIds],
+    [rootItems, getId, getLabel, isBranch, expandedIds, childrenById, filter],
   );
   const indexById = useMemo(() => new Map(rows.map((row, index) => [row.id, index])), [rows]);
   const rowById = (id: string) => rows[indexById.get(id) ?? -1];

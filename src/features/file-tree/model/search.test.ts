@@ -15,7 +15,7 @@ describe('searchTree', () => {
   it('keeps every ancestor folder of a match visible and expanded', () => {
     const result = searchTree(INDEX, 'TREE');
 
-    expect(result?.matchCount).toBe(1);
+    expect([...(result?.matchIds ?? [])]).toEqual(['src/hooks/useTree.ts']);
     expect([...(result?.visibleIds ?? [])]).toEqual(['src/hooks/useTree.ts', 'src', 'src/hooks']);
     expect([...(result?.expandedIds ?? [])]).toEqual(['src', 'src/hooks']);
   });
@@ -28,7 +28,7 @@ describe('searchTree', () => {
   });
 
   it('reports no matches, and no filter at all for a blank query', () => {
-    expect(searchTree(INDEX, 'zzz')?.matchCount).toBe(0);
+    expect(searchTree(INDEX, 'zzz')?.matchIds.size).toBe(0);
     expect(searchTree(INDEX, '   ')).toBeNull();
   });
 });

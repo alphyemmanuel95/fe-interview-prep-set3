@@ -31,7 +31,13 @@ const isOutsideFlakyFolder = (entry: SearchIndexEntry): boolean =>
 const matchesOf = (term: string) =>
   searchIndex.filter((entry) => entry.label.toLowerCase().includes(term.toLowerCase()));
 
-/** A label with several matches, some nested, none inside the flaky folder. */
+const hasDescendants = (entry: SearchIndexEntry): boolean =>
+  searchIndex.some((other) => other.ancestorIds.includes(entry.id));
+
+/**
+ * A label with several matches, some nested, none inside the flaky folder. Only leaf matches, so
+ * every other visible row is an ancestor (a matching folder would show its whole contents).
+ */
 function pickSearchTerm(): string {
   const term = searchIndex
     .map((entry) => entry.label)
@@ -40,6 +46,7 @@ function pickSearchTerm(): string {
       return (
         matches.length > 1 &&
         matches.every(isOutsideFlakyFolder) &&
+        !matches.some(hasDescendants) &&
         matches.some((match) => match.ancestorIds.length > 1)
       );
     });
@@ -161,11 +168,7 @@ describe('FileTreePage', () => {
   it('filters by search while keeping each match’s ancestor folders visible', async () => {
     const term = pickSearchTerm();
     const matches = matchesOf(term);
-    const matchIds = new Set(matches.map((match) => match.id));
-    // Folders shown only because a match sits below them (a matching folder counts as a match).
-    const ancestorOnlyIds = new Set(
-      matches.flatMap((match) => match.ancestorIds).filter((id) => !matchIds.has(id)),
-    );
+    const ancestorIds = new Set(matches.flatMap((match) => match.ancestorIds));
     const { user } = renderAt('/file-tree');
 
     await user.type(screen.getByRole('searchbox', { name: 'Search files' }), term);
@@ -178,7 +181,7 @@ describe('FileTreePage', () => {
     const matchRows = rows.filter((row) => row.textContent.includes(term));
     const otherRows = rows.filter((row) => !matchRows.includes(row));
     expect(matchRows).toHaveLength(matches.length);
-    expect(otherRows).toHaveLength(ancestorOnlyIds.size);
+    expect(otherRows).toHaveLength(ancestorIds.size);
     for (const row of otherRows) {
       expect(row).toHaveAttribute('aria-expanded', 'true');
     }

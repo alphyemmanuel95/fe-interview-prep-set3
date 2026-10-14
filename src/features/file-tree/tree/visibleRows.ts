@@ -35,13 +35,21 @@ export type ErrorRow<T> = Readonly<{
 
 export type VisibleRow<T> = ItemRow<T> | ErrorRow<T>;
 
+/**
+ * Narrows the tree to `visibleIds` (matches plus their ancestors). Below a match nothing is
+ * filtered: expanding a matching folder shows its whole contents, not an empty branch.
+ */
+export type TreeFilter = Readonly<{
+  visibleIds: ReadonlySet<string>;
+  matchIds: ReadonlySet<string>;
+}>;
+
 export type FlattenInput<T> = Readonly<{
   rootItems: readonly T[];
   accessors: TreeAccessors<T>;
   expandedIds: ReadonlySet<string>;
   childrenById: ChildrenSnapshot<T>;
-  /** When set, only these ids render (a search filter); everything else is skipped. */
-  visibleIds?: ReadonlySet<string> | undefined;
+  filter?: TreeFilter | undefined;
 }>;
 
 const ERROR_ROW_SUFFIX = '::load-error';
@@ -49,14 +57,19 @@ const ERROR_ROW_SUFFIX = '::load-error';
 // The tree renders as one flat list of the rows a user can currently see. That makes keyboard
 // navigation index-based (next/previous/first/last) and keeps rendering a single `map`.
 export function flattenVisibleRows<T>(input: FlattenInput<T>): readonly VisibleRow<T>[] {
-  const { accessors, expandedIds, childrenById, visibleIds } = input;
+  const { accessors, expandedIds, childrenById, filter } = input;
   const rows: VisibleRow<T>[] = [];
 
-  const visit = (items: readonly T[], level: number, parentId: string | null): void => {
+  const visit = (
+    items: readonly T[],
+    level: number,
+    parentId: string | null,
+    activeFilter: TreeFilter | undefined,
+  ): void => {
     const shown =
-      visibleIds === undefined
+      activeFilter === undefined
         ? items
-        : items.filter((item) => visibleIds.has(accessors.getId(item)));
+        : items.filter((item) => activeFilter.visibleIds.has(accessors.getId(item)));
     shown.forEach((item, index) => {
       const id = accessors.getId(item);
       const isBranch = accessors.isBranch(item);
@@ -91,7 +104,12 @@ export function flattenVisibleRows<T>(input: FlattenInput<T>): readonly VisibleR
           });
           return;
         case 'success':
-          visit(state.children, level + 1, id);
+          visit(
+            state.children,
+            level + 1,
+            id,
+            activeFilter?.matchIds.has(id) ? undefined : activeFilter,
+          );
           return;
         default:
           assertNever(state);
@@ -99,7 +117,7 @@ export function flattenVisibleRows<T>(input: FlattenInput<T>): readonly VisibleR
     });
   };
 
-  visit(input.rootItems, 1, null);
+  visit(input.rootItems, 1, null, filter);
   return rows;
 }
 

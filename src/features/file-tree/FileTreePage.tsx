@@ -34,10 +34,10 @@ function searchSummary(search: TreeSearchResult | null, query: string): string {
   if (search === null) {
     return '';
   }
-  if (search.matchCount === 0) {
+  if (search.matchIds.size === 0) {
     return `No files or folders match “${query.trim()}”.`;
   }
-  return search.matchCount === 1 ? '1 match' : `${search.matchCount} matches`;
+  return search.matchIds.size === 1 ? '1 match' : `${search.matchIds.size} matches`;
 }
 
 export function FileTreePage(): JSX.Element {
@@ -97,7 +97,7 @@ export function FileTreePage(): JSX.Element {
           selectedId={selectedId}
           onExpandedChange={setExpanded}
           onSelect={select}
-          visibleIds={search?.visibleIds}
+          filter={search ?? undefined}
           renderIcon={renderNodeIcon}
           renderLabel={renderLabel}
         />
