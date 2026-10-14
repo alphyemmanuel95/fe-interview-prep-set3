@@ -10,14 +10,10 @@ import { assertNever } from '../../../shared/assertNever';
 import { isToggleTarget, rowIdOf } from './treeDom';
 import { getTreeKeyAction, type TreeKeyAction } from './treeNavigation';
 import { TreeErrorRow, TreeItemRow } from './TreeRow';
+import { loadAnnouncement } from './loadAnnouncement';
 import { useChildrenLoader, type LoadChildren } from './useChildrenLoader';
 import { useRovingFocus } from './useRovingFocus';
-import {
-  ancestorIdsOf,
-  flattenVisibleRows,
-  loadStatusMessage,
-  type TreeFilter,
-} from './visibleRows';
+import { ancestorIdsOf, flattenVisibleRows, type TreeFilter } from './visibleRows';
 import './Tree.css';
 
 // Generic over the item type: nothing here knows about files. Callers describe their data through
@@ -166,7 +162,7 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
         )}
       </div>
       <p className="visually-hidden" aria-live="polite">
-        {loadStatusMessage(rows)}
+        {loadAnnouncement(rows, childrenById, getLabel)}
       </p>
     </div>
   );

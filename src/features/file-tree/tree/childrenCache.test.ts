@@ -19,7 +19,10 @@ describe('createChildrenCache', () => {
     await Promise.all([cache.load('root', fetchChildren), cache.load('root', fetchChildren)]);
 
     expect(fetchChildren).toHaveBeenCalledOnce();
-    expect(cache.getSnapshot().get('root')).toEqual({ status: 'success', children: CHILDREN });
+    expect(cache.getSnapshot().get('root')).toMatchObject({
+      status: 'success',
+      children: CHILDREN,
+    });
   });
 
   it('never refetches a branch that already loaded', async () => {
@@ -40,11 +43,14 @@ describe('createChildrenCache', () => {
       .mockResolvedValueOnce(CHILDREN);
 
     await cache.load('root', fetchChildren);
-    expect(cache.getSnapshot().get('root')).toEqual({ status: 'error', error: 'Offline' });
+    expect(cache.getSnapshot().get('root')).toMatchObject({ status: 'error', error: 'Offline' });
 
     await cache.load('root', fetchChildren);
     expect(fetchChildren).toHaveBeenCalledTimes(2);
-    expect(cache.getSnapshot().get('root')).toEqual({ status: 'success', children: CHILDREN });
+    expect(cache.getSnapshot().get('root')).toMatchObject({
+      status: 'success',
+      children: CHILDREN,
+    });
   });
 
   it('keeps loads alive across a StrictMode disconnect/connect replay', () => {

@@ -131,14 +131,6 @@ export function pickTabStop<T>(
   return visible ?? rows[0]?.id ?? null;
 }
 
-/** Text for the tree's polite live region, derived from the rows instead of stored. */
-export function loadStatusMessage<T>(rows: readonly VisibleRow<T>[]): string {
-  if (rows.some((row) => row.kind === 'item' && row.isExpanded && row.loadStatus === 'loading')) {
-    return 'Loading…';
-  }
-  return rows.some((row) => row.kind === 'error') ? 'Some items could not be loaded.' : '';
-}
-
 /** Ids of the rows above `id`, outermost first, following `parentId` through the visible rows. */
 export function ancestorIdsOf<T>(
   rows: readonly VisibleRow<T>[],

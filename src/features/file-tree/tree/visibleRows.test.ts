@@ -17,8 +17,8 @@ const guide: Node = { id: 'docs/guide', isBranch: false };
 const faq: Node = { id: 'docs/faq', isBranch: false };
 
 const loaded = new Map<string, ChildrenState<Node>>([
-  ['docs', { status: 'success', children: [guide, faq] }],
-  ['src', { status: 'error', error: 'Offline' }],
+  ['docs', { status: 'success', children: [guide, faq], settledOrder: 1 }],
+  ['src', { status: 'error', error: 'Offline', settledOrder: 2 }],
 ]);
 
 const flatten = (expanded: readonly string[], filter?: TreeFilter) =>

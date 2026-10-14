@@ -5,8 +5,8 @@
 
 export type ChildrenState<T> =
   | Readonly<{ status: 'loading' }>
-  | Readonly<{ status: 'error'; error: string }>
-  | Readonly<{ status: 'success'; children: readonly T[] }>;
+  | Readonly<{ status: 'error'; error: string; settledOrder: number }>
+  | Readonly<{ status: 'success'; children: readonly T[]; settledOrder: number }>;
 
 /** A missing entry means the branch has never been requested. */
 export type ChildrenSnapshot<T> = ReadonlyMap<string, ChildrenState<T>>;
@@ -29,6 +29,8 @@ export function createChildrenCache<T>(): ChildrenCache<T> {
   const inFlight = new Map<string, Promise<void>>();
   const listeners = new Set<() => void>();
   const controller = new AbortController();
+  // Increases with every load that settles, so the latest outcome can be announced.
+  let settledCount = 0;
   let pendingAbort: ReturnType<typeof setTimeout> | undefined;
 
   // Immutable snapshots let `useSyncExternalStore` and `useMemo` detect changes by identity.
@@ -49,15 +51,18 @@ export function createChildrenCache<T>(): ChildrenCache<T> {
     setEntry(id, { status: 'loading' });
     try {
       const children = await fetchChildren(controller.signal);
-      setEntry(id, { status: 'success', children });
+      settledCount += 1;
+      setEntry(id, { status: 'success', children, settledOrder: settledCount });
     } catch (error: unknown) {
       // Aborted only when the tree unmounted: forget the entry rather than report a failure.
       if (controller.signal.aborted) {
         setEntry(id, null);
         return;
       }
+      settledCount += 1;
       setEntry(id, {
         status: 'error',
+        settledOrder: settledCount,
         error: error instanceof Error ? error.message : UNKNOWN_ERROR,
       });
     } finally {
