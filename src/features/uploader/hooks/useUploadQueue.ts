@@ -2,11 +2,14 @@ import { useEffect, useEffectEvent, useReducer, useRef } from 'react';
 import { assertNever } from '../../../shared/assertNever';
 import type { UploadTransport } from '../api/uploadTransport';
 import type { UploadItem, UploadQueue } from '../model/uploadQueue';
+import { createUploaderState, uploaderReducer } from '../model/announcements';
 import { loadQueue, saveQueue, toPersistedQueue } from '../model/persistence';
-import { planAddedFiles, selectItemsToStart, uploadQueueReducer } from '../model/uploadQueue';
+import { planAddedFiles, selectItemsToStart } from '../model/uploadQueue';
 
 export type UploadQueueControls = Readonly<{
   items: UploadQueue;
+  /** The latest screen-reader announcement (terminal events only). */
+  announcement: string;
   addFiles: (files: readonly File[]) => void;
   cancel: (id: string) => void;
   retry: (id: string) => void;
@@ -21,7 +24,9 @@ function createId(): string {
 
 export function useUploadQueue(transport: UploadTransport): UploadQueueControls {
   // Lazy initialiser: storage is read once on mount, not on every render.
-  const [items, dispatch] = useReducer(uploadQueueReducer, undefined, loadQueue);
+  const [{ items, announcement }, dispatch] = useReducer(uploaderReducer, undefined, () =>
+    createUploaderState(loadQueue()),
+  );
   // File objects and AbortControllers are not serialisable and never drive rendering, so they
   // live in refs keyed by item id rather than in reducer state.
   const filesRef = useRef(new Map<string, File>());
@@ -167,5 +172,5 @@ export function useUploadQueue(transport: UploadTransport): UploadQueueControls 
     dispatch({ type: 'removed', id });
   }
 
-  return { items, addFiles, cancel, retry, remove };
+  return { items, announcement, addFiles, cancel, retry, remove };
 }

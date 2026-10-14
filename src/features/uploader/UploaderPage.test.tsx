@@ -103,6 +103,10 @@ describe('UploaderPage', () => {
     }
 
     expect(await screen.findByText('7 done.')).toBeInTheDocument();
+    expect(screen.getByText('All uploads finished: 7 uploaded.')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
     expect(getMaxInFlight()).toBe(MAX_CONCURRENT_UPLOADS);
     expect(uploads.map(nameOf)).toEqual(files.map((file) => file.name));
   });

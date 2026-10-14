@@ -16,7 +16,7 @@ type UploaderPageProps = Readonly<{
 }>;
 
 export function UploaderPage({ transport = xhrUploadTransport }: UploaderPageProps): JSX.Element {
-  const { items, addFiles, cancel, retry, remove } = useUploadQueue(transport);
+  const { items, announcement, addFiles, cancel, retry, remove } = useUploadQueue(transport);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   useBeforeUnloadWarning(items.some(isActive));
@@ -44,8 +44,10 @@ export function UploaderPage({ transport = xhrUploadTransport }: UploaderPagePro
         Up to {MAX_CONCURRENT_UPLOADS} files upload at a time. Failed uploads retry automatically.
       </p>
       <DropZone inputRef={fileInputRef} onFilesSelected={addFiles} />
-      <p className="uploader__summary" aria-live="polite">
-        {formatQueueSummary(items)}
+      {/* Counts change on every start and retry, so they are visible but not announced. */}
+      <p className="uploader__summary">{formatQueueSummary(items)}</p>
+      <p className="visually-hidden" aria-live="polite">
+        {announcement}
       </p>
       {items.length > 0 && (
         <ul ref={listRef} className="uploader__list" aria-label="Upload queue">
