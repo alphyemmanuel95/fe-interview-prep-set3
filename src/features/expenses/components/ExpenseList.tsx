@@ -1,5 +1,11 @@
 import { type JSX, type RefObject, useId } from 'react';
-import { type Expense, formatIsoDate } from '../model/expenses';
+import {
+  ALL_CATEGORIES,
+  type Expense,
+  type ExpenseFilters,
+  formatIsoDate,
+  formatMonth,
+} from '../model/expenses';
 import { formatCents } from '../model/money';
 import './ExpenseList.css';
 
@@ -12,7 +18,38 @@ export type ExpenseListProps = Readonly<{
   editButtonsRef: RefObject<Map<string, HTMLButtonElement>>;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  /** Whether any expense exists at all, to tell "nothing yet" apart from "filtered out". */
+  hasAnyExpenses: boolean;
+  filters: ExpenseFilters;
+  onShowAllCategories: () => void;
 }>;
+
+type EmptyStateProps = Readonly<
+  Pick<ExpenseListProps, 'hasAnyExpenses' | 'filters' | 'onShowAllCategories'>
+>;
+
+function EmptyState({
+  hasAnyExpenses,
+  filters: { month, category },
+  onShowAllCategories,
+}: EmptyStateProps): JSX.Element {
+  if (!hasAnyExpenses) {
+    return <p className="expense-list__empty">No expenses yet — add one above.</p>;
+  }
+  if (category === ALL_CATEGORIES) {
+    return <p className="expense-list__empty">No expenses in {formatMonth(month)}.</p>;
+  }
+  return (
+    <div className="expense-list__empty">
+      <p className="expense-list__empty-text">
+        No {category} expenses in {formatMonth(month)}.
+      </p>
+      <button type="button" className="expense-list__button" onClick={onShowAllCategories}>
+        Show all categories
+      </button>
+    </div>
+  );
+}
 
 export function ExpenseList({
   expenses,
@@ -21,6 +58,9 @@ export function ExpenseList({
   editButtonsRef,
   onEdit,
   onDelete,
+  hasAnyExpenses,
+  filters,
+  onShowAllCategories,
 }: ExpenseListProps): JSX.Element {
   const headingId = useId();
   return (
@@ -29,7 +69,11 @@ export function ExpenseList({
         Expenses
       </h2>
       {expenses.length === 0 ? (
-        <p className="expense-list__empty">No expenses match the current filters.</p>
+        <EmptyState
+          hasAnyExpenses={hasAnyExpenses}
+          filters={filters}
+          onShowAllCategories={onShowAllCategories}
+        />
       ) : (
         <ul className="expense-list__items">
           {expenses.map((expense) => {

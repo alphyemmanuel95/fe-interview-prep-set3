@@ -61,6 +61,12 @@ export function ExpensesPage(): JSX.Element {
     }
   }
 
+  function handleShowAllCategories(): void {
+    setCategory(ALL_CATEGORIES);
+    // The button that had focus disappears once the list fills, so keep focus in the list.
+    listHeadingRef.current?.focus();
+  }
+
   function handleDelete(id: string): void {
     deleteExpense(id);
     if (id === editingId) {
@@ -128,6 +134,9 @@ export function ExpensesPage(): JSX.Element {
         editButtonsRef={editButtonsRef}
         onEdit={setEditingId}
         onDelete={handleDelete}
+        hasAnyExpenses={expenses.length > 0}
+        filters={filters}
+        onShowAllCategories={handleShowAllCategories}
       />
     </section>
   );

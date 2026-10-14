@@ -94,7 +94,7 @@ describe('ExpensesPage', () => {
       expect(amount).toHaveAttribute('aria-invalid', 'true');
     }
 
-    expect(screen.getByText('No expenses match the current filters.')).toBeInTheDocument();
+    expect(screen.getByText('No expenses yet — add one above.')).toBeInTheDocument();
     expect(monthTotal()).toHaveTextContent('0.00');
   });
 
@@ -118,6 +118,19 @@ describe('ExpensesPage', () => {
     expect(within(filters()).getByLabelText('Category')).toHaveValue('Food');
     // The summary covers the whole month, whatever category the list is filtered to.
     expect(monthTotal()).toHaveTextContent('0.30');
+  });
+
+  it('explains an empty filtered list and offers to show all categories', async () => {
+    const user = userEvent.setup();
+    renderPage('/expenses?month=2026-10');
+    await addExpense(user, LUNCH);
+
+    await user.selectOptions(within(filters()).getByLabelText('Category'), 'Bills');
+    expect(screen.getByText('No Bills expenses in October 2026.')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show all categories' }));
+    expect(within(filters()).getByLabelText('Category')).toHaveValue('all');
+    expect(screen.getByRole('button', { name: 'Edit Lunch' })).toBeInTheDocument();
   });
 
   it('falls back to the current month and all categories for invalid URL filters', () => {
