@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { fetchCitySuggestions } from '../api/fetchCitySuggestions';
+import { normaliseQuery } from '../model/normaliseQuery';
 import type { CitySearchState, CitySuggestion } from '../model/types';
 
-type SettledSearch = Readonly<
-  | { query: string; outcome: 'success'; suggestions: readonly CitySuggestion[] }
-  | { query: string; outcome: 'error'; message: string }
->;
+type SuggestionCache = ReadonlyMap<string, readonly CitySuggestion[]>;
+
+type SearchFailure = Readonly<{ query: string; message: string }>;
 
 export type CitySearch = Readonly<{
   state: CitySearchState;
@@ -15,41 +15,53 @@ export type CitySearch = Readonly<{
 const toErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Unknown error';
 
-function deriveState(query: string, settled: SettledSearch | null): CitySearchState {
+function deriveState(
+  query: string,
+  cache: SuggestionCache,
+  failure: SearchFailure | null,
+): CitySearchState {
   if (query === '') {
     return { status: 'idle' };
   }
-  if (settled?.query !== query) {
-    return { status: 'loading' };
+  const cached = cache.get(query);
+  if (cached !== undefined) {
+    return cached.length === 0 ? { status: 'empty' } : { status: 'success', suggestions: cached };
   }
-  if (settled.outcome === 'error') {
-    return { status: 'error', message: settled.message };
+  if (failure?.query === query) {
+    return { status: 'error', message: failure.message };
   }
-  return settled.suggestions.length === 0
-    ? { status: 'empty' }
-    : { status: 'success', suggestions: settled.suggestions };
+  return { status: 'loading' };
 }
 
 export function useCitySearch(rawQuery: string): CitySearch {
-  const query = rawQuery.trim();
-  const [settled, setSettled] = useState<SettledSearch | null>(null);
-  const isSettled = settled?.query === query;
+  const query = normaliseQuery(rawQuery);
+  // The cache lives in state, scoped to this hook instance: render derives the status from it
+  // (a ref can't be read during render), the update re-renders on arrival, and it is released
+  // with the component. A module-level Map would leak across tests and grow for the app's lifetime.
+  // It is replaced, never mutated, so React sees every change.
+  const [cache, setCache] = useState<SuggestionCache>(() => new Map());
+  // Only successes are cached. The last failure is kept separately so Retry can clear it and
+  // trigger a fresh request instead of replaying a cached error.
+  const [failure, setFailure] = useState<SearchFailure | null>(null);
+  const isCached = cache.has(query);
+  const hasFailed = failure?.query === query;
 
   useEffect(() => {
-    if (query === '' || isSettled) {
+    // A cache hit resolves synchronously during render: no request, no loading flash.
+    if (query === '' || isCached || hasFailed) {
       return;
     }
     const controller = new AbortController();
     void fetchCitySuggestions(query, controller.signal).then(
       (suggestions) => {
-        setSettled({ query, outcome: 'success', suggestions });
+        setCache((previous) => new Map(previous).set(query, suggestions));
       },
       (error: unknown) => {
         // An aborted request was superseded or unmounted; it is not a failure the user should see.
         if (controller.signal.aborted) {
           return;
         }
-        setSettled({ query, outcome: 'error', message: toErrorMessage(error) });
+        setFailure({ query, message: toErrorMessage(error) });
       },
     );
     // Abort (not just ignore) the in-flight request when a newer query starts or on unmount,
@@ -57,12 +69,12 @@ export function useCitySearch(rawQuery: string): CitySearch {
     return () => {
       controller.abort();
     };
-  }, [query, isSettled]);
+  }, [query, isCached, hasFailed]);
 
   return {
-    state: deriveState(query, settled),
+    state: deriveState(query, cache, failure),
     retry: () => {
-      setSettled(null);
+      setFailure(null);
     },
   };
 }
