@@ -8,6 +8,7 @@ import {
 } from './model/expenses';
 import { ExpenseForm } from './components/ExpenseForm';
 import { ExpenseList } from './components/ExpenseList';
+import { FormField } from './components/FormField';
 import { MonthSummary } from './components/MonthSummary';
 import { useExpenseFilters } from './hooks/useExpenseFilters';
 import { useExpenses } from './hooks/useExpenses';
@@ -64,36 +65,38 @@ export function ExpensesPage(): JSX.Element {
 
       <fieldset className="expenses-page__filters">
         <legend className="expenses-page__legend">Filters</legend>
-        <div className="expenses-page__filter">
-          <label htmlFor={`${filterId}-month`}>Month</label>
-          <input
-            id={`${filterId}-month`}
-            className="expenses-page__control"
-            type="month"
-            value={month}
-            onChange={(event) => {
-              setMonth(event.target.value);
-            }}
-          />
-        </div>
-        <div className="expenses-page__filter">
-          <label htmlFor={`${filterId}-category`}>Category</label>
-          <select
-            id={`${filterId}-category`}
-            className="expenses-page__control"
-            value={category}
-            onChange={(event) => {
-              setCategory(event.target.value);
-            }}
-          >
-            <option value={ALL_CATEGORIES}>All categories</option>
-            {CATEGORIES.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
+        <FormField id={`${filterId}-month`} label="Month" error={undefined}>
+          {(controlProps) => (
+            <input
+              {...controlProps}
+              className="form-field__control"
+              type="month"
+              value={month}
+              onChange={(event) => {
+                setMonth(event.target.value);
+              }}
+            />
+          )}
+        </FormField>
+        <FormField id={`${filterId}-category`} label="Category" error={undefined}>
+          {(controlProps) => (
+            <select
+              {...controlProps}
+              className="form-field__control"
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value);
+              }}
+            >
+              <option value={ALL_CATEGORIES}>All categories</option>
+              {CATEGORIES.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          )}
+        </FormField>
       </fieldset>
 
       <div className="expenses-page__grid">

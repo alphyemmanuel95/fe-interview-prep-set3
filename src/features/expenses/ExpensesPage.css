@@ -8,8 +8,8 @@
 }
 
 .expenses-page__filters {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   gap: var(--space-3) var(--space-4);
   margin: 0;
   padding: var(--space-3) var(--space-4) var(--space-4);
@@ -21,22 +21,6 @@
 .expenses-page__legend {
   padding: 0 var(--space-1);
   font-weight: 600;
-}
-
-.expenses-page__filter {
-  display: grid;
-  flex: 1 1 12rem;
-  gap: var(--space-1);
-}
-
-.expenses-page__control {
-  width: 100%;
-  min-height: 2.5rem;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-text);
 }
 
 .expenses-page__grid {

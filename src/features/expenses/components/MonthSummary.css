@@ -10,7 +10,7 @@
 
 .month-summary__heading {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: var(--font-size-heading);
 }
 
 .month-summary__total {
@@ -23,7 +23,7 @@
 }
 
 .month-summary__total-value {
-  font-size: 2rem;
+  font-size: var(--font-size-display);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
