@@ -3,6 +3,7 @@ import { assertNever } from '../../shared/assertNever';
 import { BookingProgress } from './components/BookingProgress';
 import { ErrorSummary } from './components/ErrorSummary';
 import { EventStep } from './components/EventStep';
+import { SeatStep } from './components/SeatStep';
 import { useBookingDraft } from './hooks/useBookingDraft';
 import { useFocusOnChange } from './hooks/useFocusOnChange';
 import { useLocalToday } from './hooks/useLocalToday';
@@ -41,6 +42,15 @@ export function BookingPage(): JSX.Element {
           />
         );
       case 'seats':
+        return (
+          <SeatStep
+            seatIds={draft.seatIds}
+            errors={errors}
+            onSeatToggle={(seatId) => {
+              dispatch({ type: 'seatToggled', seatId });
+            }}
+          />
+        );
       case 'attendees':
       case 'review':
         return null;
