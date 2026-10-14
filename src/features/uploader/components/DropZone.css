@@ -1,0 +1,51 @@
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  text-align: center;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.drop-zone--active {
+  border-color: var(--color-primary);
+  border-style: solid;
+  background: var(--color-surface-alt);
+}
+
+.drop-zone__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.drop-zone__button {
+  display: inline-block;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drop-zone__button:hover {
+  filter: brightness(1.1);
+}
+
+/* The visually hidden input holds focus; show the ring on its visible label. */
+.drop-zone__input:focus-visible + .drop-zone__button {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop-zone {
+    transition: none;
+  }
+}
