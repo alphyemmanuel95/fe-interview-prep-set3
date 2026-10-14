@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toLocalIsoDate } from './localDate';
 import { validateAttendeeStep, validateEventStep, validateSeatStep } from './validation';
 
@@ -45,8 +45,20 @@ describe('validateAttendeeStep', () => {
 });
 
 describe('toLocalIsoDate', () => {
+  // Pin a UTC+ zone; under TZ=UTC the local and UTC days are equal and the test would prove nothing.
+  beforeEach(() => {
+    vi.stubEnv('TZ', 'Asia/Kolkata');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('uses the local calendar day, not the UTC one', () => {
-    // 00:30 local time: toISOString() would report the previous day in any UTC+ zone.
-    expect(toLocalIsoDate(new Date(2026, 9, 14, 0, 30))).toBe('2026-10-14');
+    // 19:00 UTC on the 13th is 00:30 on the 14th in India (UTC+5:30).
+    const justAfterLocalMidnight = new Date(Date.UTC(2026, 9, 13, 19, 0));
+
+    expect(justAfterLocalMidnight.toISOString().slice(0, 10)).toBe('2026-10-13');
+    expect(toLocalIsoDate(justAfterLocalMidnight)).toBe('2026-10-14');
   });
 });
