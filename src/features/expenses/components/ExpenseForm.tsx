@@ -3,20 +3,25 @@ import {
   CATEGORIES,
   type Expense,
   type ExpenseDraft,
+  type ExpenseFormDefaults,
   type ExpenseFormErrors,
   type ExpenseFormField,
   type ExpenseFormValues,
+  formatMonth,
   isCategory,
-  toIsoDate,
+  monthOf,
+  resolveFormValues,
+  toExpenseFormState,
   validateExpense,
 } from '../model/expenses';
-import { centsToAmountInput } from '../model/money';
 import { FormField } from './FormField';
 import './ExpenseForm.css';
 
 export type ExpenseFormProps = Readonly<{
   /** The expense being edited, or `null` to add a new one. */
   expense: Expense | null;
+  /** Category and date for a new expense, taken from what the page is showing. */
+  defaults: ExpenseFormDefaults;
   onSave: (draft: ExpenseDraft) => void;
   onCancel: () => void;
 }>;
@@ -24,25 +29,20 @@ export type ExpenseFormProps = Readonly<{
 const FIELD_ORDER: readonly ExpenseFormField[] = ['title', 'amount', 'date'];
 const NO_ERRORS: ExpenseFormErrors = {};
 
-function toFormValues(expense: Expense | null): ExpenseFormValues {
-  if (expense === null) {
-    return { title: '', amount: '', category: CATEGORIES[0], date: toIsoDate(new Date()) };
-  }
-  return {
-    title: expense.title,
-    amount: centsToAmountInput(expense.amountCents),
-    category: expense.category,
-    date: expense.date,
-  };
-}
-
 // Add and Edit share this form. The parent keys it by expense id, so switching between them
 // remounts it with fresh values instead of syncing props into state with an effect.
-export function ExpenseForm({ expense, onSave, onCancel }: ExpenseFormProps): JSX.Element {
+export function ExpenseForm({
+  expense,
+  defaults,
+  onSave,
+  onCancel,
+}: ExpenseFormProps): JSX.Element {
   const id = useId();
   const isEditing = expense !== null;
-  const [values, setValues] = useState(() => toFormValues(expense));
+  const [state, setState] = useState(() => toExpenseFormState(expense));
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const values = resolveFormValues(state, defaults);
   const titleRef = useRef<HTMLInputElement>(null);
   const amountRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
@@ -63,7 +63,7 @@ export function ExpenseForm({ expense, onSave, onCancel }: ExpenseFormProps): JS
     key: K,
     value: ExpenseFormValues[K],
   ): void {
-    setValues((current) => ({ ...current, [key]: value }));
+    setState((current) => ({ ...current, [key]: value }));
   }
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>): void {
@@ -77,11 +77,14 @@ export function ExpenseForm({ expense, onSave, onCancel }: ExpenseFormProps): JS
       }
       return;
     }
-    onSave(validation.draft);
+    const { draft } = validation;
+    onSave(draft);
     if (!isEditing) {
       // Keep category and date: consecutive entries usually share them.
-      setValues((current) => ({ ...current, title: '', amount: '' }));
+      setState((current) => ({ ...current, title: '', amount: '' }));
       setHasAttemptedSubmit(false);
+      // Confirms where the expense went, which matters when the filters hide it.
+      setStatusMessage(`Added ${draft.title} to ${formatMonth(monthOf(draft.date))}.`);
       titleRef.current?.focus();
     }
   }
@@ -179,6 +182,10 @@ export function ExpenseForm({ expense, onSave, onCancel }: ExpenseFormProps): JS
             Cancel
           </button>
         )}
+        {/* Rendered even when empty: a live region must exist before its text changes. */}
+        <p role="status" className="expense-form__status">
+          {statusMessage}
+        </p>
       </div>
     </form>
   );

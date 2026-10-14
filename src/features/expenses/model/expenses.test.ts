@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   type Expense,
   type ExpenseDraft,
+  defaultCategoryFor,
+  defaultDateForMonth,
   expensesReducer,
   isExpenseList,
   isIsoDate,
@@ -134,5 +136,13 @@ describe('guards and dates', () => {
 
   it('builds month keys in local time', () => {
     expect(toMonthKey(new Date(2026, 0, 31))).toBe('2026-01');
+  });
+
+  it('defaults a new expense into the viewed month and category', () => {
+    const today = new Date(2026, 9, 14);
+    expect(defaultDateForMonth('2026-10', today)).toBe('2026-10-14');
+    expect(defaultDateForMonth('2026-03', today)).toBe('2026-03-01');
+    expect(defaultCategoryFor('Travel')).toBe('Travel');
+    expect(defaultCategoryFor('all')).toBe('Food');
   });
 });

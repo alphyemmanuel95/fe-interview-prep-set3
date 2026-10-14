@@ -1,5 +1,5 @@
 import { assertNever } from '../../../shared/assertNever';
-import { parseAmountToCents } from './money';
+import { centsToAmountInput, parseAmountToCents } from './money';
 
 // Single source of truth for categories: adding one here updates the form, filter and breakdown.
 export const CATEGORIES = ['Food', 'Travel', 'Bills', 'Other'] as const;
@@ -129,6 +129,46 @@ export type ExpenseFormValues = Readonly<{
 
 export type ExpenseFormField = 'title' | 'amount' | 'date';
 export type ExpenseFormErrors = Readonly<Partial<Record<ExpenseFormField, string>>>;
+
+export type ExpenseFormDefaults = Readonly<{ category: Category; date: string }>;
+
+// `null` means "not chosen yet": the field then follows the defaults, so a new expense lands in
+// the month and category being viewed, even if the filters change while the form is open.
+export type ExpenseFormState = Readonly<{
+  title: string;
+  amount: string;
+  category: Category | null;
+  date: string | null;
+}>;
+
+export function toExpenseFormState(expense: Expense | null): ExpenseFormState {
+  if (expense === null) {
+    return { title: '', amount: '', category: null, date: null };
+  }
+  return {
+    title: expense.title,
+    amount: centsToAmountInput(expense.amountCents),
+    category: expense.category,
+    date: expense.date,
+  };
+}
+
+export const resolveFormValues = (
+  state: ExpenseFormState,
+  defaults: ExpenseFormDefaults,
+): ExpenseFormValues => ({
+  ...state,
+  category: state.category ?? defaults.category,
+  date: state.date ?? defaults.date,
+});
+
+// Today when viewing the current month, otherwise the 1st, so a new expense shows up in the
+// month the user is looking at instead of silently landing in another one.
+export const defaultDateForMonth = (month: MonthKey, today: Date): string =>
+  toMonthKey(today) === month ? toIsoDate(today) : `${month}-01`;
+
+export const defaultCategoryFor = (filter: CategoryFilter): Category =>
+  filter === ALL_CATEGORIES ? CATEGORIES[0] : filter;
 
 export type ExpenseValidation =
   { status: 'valid'; draft: ExpenseDraft } | { status: 'invalid'; errors: ExpenseFormErrors };

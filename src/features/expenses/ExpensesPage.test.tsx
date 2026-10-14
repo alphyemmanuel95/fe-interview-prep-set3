@@ -133,6 +133,27 @@ describe('ExpensesPage', () => {
     expect(screen.getByRole('button', { name: 'Edit Lunch' })).toBeInTheDocument();
   });
 
+  it('adds a new expense into the viewed month and category and says where it went', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 14));
+    const user = userEvent.setup();
+    renderPage('/expenses?month=2026-03&category=Travel');
+    const form = screen.getByRole('form', { name: 'Add expense' });
+    expect(within(form).getByLabelText('Date')).toHaveValue('2026-03-01');
+    expect(within(form).getByLabelText('Category')).toHaveValue('Travel');
+
+    await user.type(within(form).getByLabelText('Title'), 'Taxi');
+    await user.type(within(form).getByLabelText('Amount'), '12');
+    await user.click(within(form).getByRole('button', { name: 'Add expense' }));
+
+    expect(within(form).getByRole('status')).toHaveTextContent('Added Taxi to March 2026.');
+    expect(screen.getByRole('button', { name: 'Edit Taxi' })).toBeInTheDocument();
+
+    // A category the user has not picked follows the filter while the form is open.
+    await user.selectOptions(within(filters()).getByLabelText('Category'), 'all');
+    expect(within(form).getByLabelText('Category')).toHaveValue('Food');
+  });
+
   it('falls back to the current month and all categories for invalid URL filters', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 14));

@@ -43,3 +43,9 @@
   background: var(--color-primary);
   filter: brightness(0.88);
 }
+
+.expense-form__status {
+  align-self: center;
+  margin: 0;
+  color: var(--color-success);
+}

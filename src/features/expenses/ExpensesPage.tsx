@@ -4,6 +4,8 @@ import {
   ALL_CATEGORIES,
   CATEGORIES,
   type ExpenseDraft,
+  defaultCategoryFor,
+  defaultDateForMonth,
   selectMonthTotals,
   selectVisibleExpenses,
 } from './model/expenses';
@@ -122,6 +124,10 @@ export function ExpensesPage(): JSX.Element {
           key={editingExpense?.id ?? 'new'}
           expense={editingExpense}
           onSave={handleSave}
+          defaults={{
+            category: defaultCategoryFor(category),
+            date: defaultDateForMonth(month, new Date()),
+          }}
           onCancel={handleCancel}
         />
         <MonthSummary month={month} totals={monthTotals} />
