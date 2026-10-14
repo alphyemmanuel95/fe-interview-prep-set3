@@ -17,7 +17,7 @@ export function parseAmountToCents(input: string): AmountParseResult {
   }
   const match = AMOUNT_PATTERN.exec(trimmed);
   if (match === null) {
-    return { status: 'invalid', error: 'Enter a positive number with up to 2 decimals.' };
+    return { status: 'invalid', error: 'Enter an amount like 12.50.' };
   }
   const [, whole = '', fraction = ''] = match;
   const cents = Number(whole) * CENTS_PER_UNIT + Number(fraction.padEnd(FRACTION_DIGITS, '0'));

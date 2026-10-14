@@ -108,7 +108,7 @@ describe('validateExpense', () => {
       status: 'invalid',
       errors: {
         title: 'Enter a title.',
-        amount: 'Enter a positive number with up to 2 decimals.',
+        amount: 'Enter an amount like 12.50.',
         date: 'Enter a valid date.',
       },
     });

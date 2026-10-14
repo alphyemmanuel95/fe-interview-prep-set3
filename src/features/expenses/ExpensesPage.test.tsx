@@ -81,7 +81,7 @@ describe('ExpensesPage', () => {
     expect(title).toHaveAttribute('aria-invalid', 'true');
     expect(title).toHaveAccessibleDescription('Enter a title.');
     expect(title).toHaveFocus();
-    expect(amount).toHaveAccessibleDescription('Enter a positive number with up to 2 decimals.');
+    expect(amount).toHaveAccessibleDescription('Enter an amount like 12.50.');
 
     for (const invalid of ['0', 'abc', '']) {
       await user.clear(amount);
