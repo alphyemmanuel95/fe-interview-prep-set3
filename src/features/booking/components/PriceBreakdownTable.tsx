@@ -16,7 +16,7 @@ export function PriceBreakdownTable({ seatIds }: PriceBreakdownTableProps): JSX.
         <tr>
           <th scope="col">Seat type</th>
           <th scope="col" className="price-table__number">
-            Seats
+            Qty
           </th>
           <th scope="col" className="price-table__number">
             Each
