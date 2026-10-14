@@ -154,6 +154,20 @@ describe('ExpensesPage', () => {
     expect(within(form).getByLabelText('Category')).toHaveValue('Food');
   });
 
+  it('removes a deleted expense from the list and the totals', async () => {
+    const user = userEvent.setup();
+    renderPage('/expenses?month=2026-10');
+    await addExpense(user, LUNCH);
+    await addExpense(user, TAXI);
+
+    await user.click(screen.getByRole('button', { name: 'Delete Lunch' }));
+
+    expect(screen.queryByRole('button', { name: 'Edit Lunch' })).not.toBeInTheDocument();
+    expect(monthTotal()).toHaveTextContent('0.20');
+    expect(breakdownRow('Food 0.00')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Expenses' })).toHaveFocus();
+  });
+
   it('steps the month filter with the previous and next buttons', async () => {
     const user = userEvent.setup();
     const { router } = renderPage('/expenses?month=2026-01');
