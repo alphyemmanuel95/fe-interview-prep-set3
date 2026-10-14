@@ -44,8 +44,6 @@ function createControllableTransport() {
 }
 
 const SERVER_ERROR: UploadOutcome = { kind: 'error', message: 'Server responded 500' };
-// Fake timers also advance with real time, so "not yet retried" is checked a little early.
-const TIMER_MARGIN_MS = 100;
 
 function createFiles(count: number): File[] {
   return Array.from({ length: count }, (_, index) => new File(['x'], `file-${index + 1}.txt`));
@@ -53,6 +51,14 @@ function createFiles(count: number): File[] {
 
 function nameOf(upload: PendingUpload | undefined): string | undefined {
   return upload?.request.file.name;
+}
+
+// Testing Library drains its async wrapper with setTimeout(0) and only advances fake timers when it
+// detects Jest. Exposing Vitest's clock under that name lets userEvent and act run on plain fake
+// timers, so every backoff boundary is exact instead of racing real time.
+function enableDeterministicTimers(): void {
+  vi.useFakeTimers();
+  vi.stubGlobal('jest', { advanceTimersByTime: (ms: number) => vi.advanceTimersByTime(ms) });
 }
 
 async function advanceTime(ms: number): Promise<void> {
@@ -183,44 +189,48 @@ describe('UploaderPage', () => {
   });
 
   it('retries after 1s, 2s and 4s, then fails until retried manually', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+    enableDeterministicTimers();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const transport = vi.fn<UploadTransport>(() => Promise.resolve(SERVER_ERROR));
     render(<UploaderPage transport={transport} />);
 
     await user.upload(screen.getByLabelText('Choose files'), createFiles(1));
-    expect(await screen.findByText('Server responded 500. Retrying in 1 s')).toBeInTheDocument();
+    await advanceTime(0);
+    expect(screen.getByText('Server responded 500. Retrying in 1 s')).toBeInTheDocument();
 
     for (const [retryIndex, delayMs] of RETRY_DELAYS_MS.entries()) {
       const attemptsSoFar = retryIndex + 1;
-      await advanceTime(delayMs - TIMER_MARGIN_MS);
+      await advanceTime(delayMs - 1);
       expect(transport).toHaveBeenCalledTimes(attemptsSoFar);
-      await advanceTime(TIMER_MARGIN_MS);
+      await advanceTime(1);
       expect(transport).toHaveBeenCalledTimes(attemptsSoFar + 1);
     }
 
     expect(
-      await screen.findByText(`Failed after ${MAX_ATTEMPTS} attempts: Server responded 500`),
+      screen.getByText(`Failed after ${MAX_ATTEMPTS} attempts: Server responded 500`),
     ).toBeInTheDocument();
     await advanceTime(RETRY_DELAYS_MS.at(-1) ?? 0);
     expect(transport).toHaveBeenCalledTimes(MAX_ATTEMPTS);
 
     await user.click(screen.getByRole('button', { name: 'Retry file-1.txt' }));
+    await advanceTime(0);
     expect(transport).toHaveBeenCalledTimes(MAX_ATTEMPTS + 1);
   });
 
   it('sends the same idempotency key on every retry of a file', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+    enableDeterministicTimers();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const transport = vi.fn<UploadTransport>(() => Promise.resolve(SERVER_ERROR));
     render(<UploaderPage transport={transport} />);
 
     await user.upload(screen.getByLabelText('Choose files'), createFiles(2));
+    await advanceTime(0);
     for (const delayMs of RETRY_DELAYS_MS) {
       await advanceTime(delayMs);
     }
-    await screen.findAllByText(/^Failed after/);
+    expect(screen.getAllByText(/^Failed after/)).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: 'Retry file-1.txt' }));
+    await advanceTime(0);
 
     const keysByFile = new Map<string, Set<string>>();
     for (const [request] of transport.mock.calls) {
