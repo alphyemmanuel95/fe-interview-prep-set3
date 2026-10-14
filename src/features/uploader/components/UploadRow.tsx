@@ -1,8 +1,9 @@
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { assertNever } from '../../../shared/assertNever';
 import { formatFileSize } from '../model/format';
 import type { UploadItem } from '../model/uploadQueue';
-import { canRetry, getRetryDelayMs, isActive } from '../model/uploadQueue';
+import { canRetry, isActive } from '../model/uploadQueue';
+import { RetryStatus } from './RetryStatus';
 import './UploadRow.css';
 
 type UploadRowProps = Readonly<{
@@ -12,10 +13,9 @@ type UploadRowProps = Readonly<{
   onRemove: (id: string) => void;
 }>;
 
-const MS_PER_SECOND = 1_000;
 const PERCENT = 100;
 
-function describeStatus(item: UploadItem): string {
+function describeStatus(item: UploadItem): ReactNode {
   switch (item.status) {
     case 'queued':
       return 'Queued';
@@ -24,7 +24,7 @@ function describeStatus(item: UploadItem): string {
         ? `Uploading ${Math.round(item.progress * PERCENT)}%`
         : 'Uploaded, waiting for the server';
     case 'retrying':
-      return `${item.error}. Retrying in ${(getRetryDelayMs(item.attempt) ?? 0) / MS_PER_SECOND} s`;
+      return <RetryStatus attempt={item.attempt} error={item.error} retryAt={item.retryAt} />;
     case 'done':
       return 'Uploaded';
     case 'failed':

@@ -197,11 +197,16 @@ describe('UploaderPage', () => {
 
     await user.upload(screen.getByLabelText('Choose files'), createFiles(1));
     await advanceTime(0);
-    expect(screen.getByText('Server responded 500. Retrying in 1 s')).toBeInTheDocument();
 
     for (const [retryIndex, delayMs] of RETRY_DELAYS_MS.entries()) {
       const attemptsSoFar = retryIndex + 1;
+      const failedAttempt = `Attempt ${attemptsSoFar} of ${MAX_ATTEMPTS} failed (Server responded 500)`;
+      expect(
+        screen.getByText(`${failedAttempt}. Retrying in ${delayMs / 1_000} s`),
+      ).toBeInTheDocument();
       await advanceTime(delayMs - 1);
+      // The countdown ticks down in the row while the retry is pending.
+      expect(screen.getByText(`${failedAttempt}. Retrying in 1 s`)).toBeInTheDocument();
       expect(transport).toHaveBeenCalledTimes(attemptsSoFar);
       await advanceTime(1);
       expect(transport).toHaveBeenCalledTimes(attemptsSoFar + 1);
