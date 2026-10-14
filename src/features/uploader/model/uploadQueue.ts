@@ -29,6 +29,8 @@ export type UploadItem = UploadItemBase &
     | Readonly<{ status: 'done' }>
     | Readonly<{ status: 'failed'; error: string }>
     | Readonly<{ status: 'cancelled' }>
+    // Restored after a reload without its File, which the browser can't persist.
+    | Readonly<{ status: 'needs-reselect' }>
   );
 
 export type UploadStatus = UploadItem['status'];
@@ -36,7 +38,11 @@ export type UploadStatus = UploadItem['status'];
 export type UploadQueue = readonly UploadItem[];
 
 export type UploadQueueAction =
-  | Readonly<{ type: 'filesAdded'; items: readonly UploadItem[] }>
+  | Readonly<{
+      type: 'filesAdded';
+      newItems: readonly UploadItem[];
+      reattachedIds: readonly string[];
+    }>
   | Readonly<{ type: 'started'; id: string }>
   | Readonly<{ type: 'progressed'; id: string; progress: number }>
   | Readonly<{ type: 'succeeded'; id: string }>
@@ -51,18 +57,49 @@ function toBase({ id, name, size, idempotencyKey, attempt }: UploadItem): Upload
   return { id, name, size, idempotencyKey, attempt };
 }
 
-export function createQueuedItem(
-  file: Readonly<{ name: string; size: number }>,
+export type FileAssignment = Readonly<{ itemId: string; file: File }>;
+
+export type AddedFilesPlan = Readonly<{
+  newItems: readonly UploadItem[];
+  reattachedIds: readonly string[];
+  assignments: readonly FileAssignment[];
+}>;
+
+// A file with the same name and size as an item waiting for re-select is treated as that file:
+// it resumes under the item's original idempotency key, so a request the server completed
+// before the reload is recognised instead of stored twice. Anything else becomes a new item.
+export function planAddedFiles(
+  queue: UploadQueue,
+  files: readonly File[],
   createId: () => string,
-): UploadItem {
-  return {
-    id: createId(),
-    name: file.name,
-    size: file.size,
-    idempotencyKey: createId(),
-    attempt: 0,
-    status: 'queued',
-  };
+): AddedFilesPlan {
+  const waiting = queue.filter((item) => item.status === 'needs-reselect');
+  const newItems: UploadItem[] = [];
+  const reattachedIds: string[] = [];
+  const assignments: FileAssignment[] = [];
+
+  for (const file of files) {
+    const match = waiting.find(
+      (item) =>
+        item.name === file.name && item.size === file.size && !reattachedIds.includes(item.id),
+    );
+    if (match === undefined) {
+      const item: UploadItem = {
+        id: createId(),
+        name: file.name,
+        size: file.size,
+        idempotencyKey: createId(),
+        attempt: 0,
+        status: 'queued',
+      };
+      newItems.push(item);
+      assignments.push({ itemId: item.id, file });
+    } else {
+      reattachedIds.push(match.id);
+      assignments.push({ itemId: match.id, file });
+    }
+  }
+  return { newItems, reattachedIds, assignments };
 }
 
 export function isActive(item: UploadItem): boolean {
@@ -121,7 +158,12 @@ function transition(item: UploadItem, action: UploadQueueAction): UploadItem {
 
 export function uploadQueueReducer(queue: UploadQueue, action: UploadQueueAction): UploadQueue {
   if (action.type === 'filesAdded') {
-    return [...queue, ...action.items];
+    const reattached = queue.map((item) =>
+      item.status === 'needs-reselect' && action.reattachedIds.includes(item.id)
+        ? { ...toBase(item), attempt: 0, status: 'queued' as const }
+        : item,
+    );
+    return [...reattached, ...action.newItems];
   }
   if (action.type === 'removed') {
     return queue.filter((item) => item.id !== action.id);

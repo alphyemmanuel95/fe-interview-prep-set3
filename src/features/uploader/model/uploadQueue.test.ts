@@ -3,6 +3,7 @@ import type { UploadItem, UploadQueue, UploadQueueAction } from './uploadQueue';
 import {
   MAX_ATTEMPTS,
   MAX_CONCURRENT_UPLOADS,
+  planAddedFiles,
   RETRY_DELAYS_MS,
   selectItemsToStart,
   uploadQueueReducer,
@@ -141,5 +142,30 @@ describe('uploadQueueReducer', () => {
 
   it('removes an item', () => {
     expect(reduce([queued('a'), queued('b')], { type: 'removed', id: 'a' })).toEqual([queued('b')]);
+  });
+});
+
+describe('planAddedFiles', () => {
+  const waiting: UploadItem = { ...queued('a'), status: 'needs-reselect' };
+  let nextId = 0;
+  const createId = (): string => `new-${String(++nextId)}`;
+
+  it('re-attaches a file with the same name and size under its original key', () => {
+    const plan = planAddedFiles([waiting], [new File(['0123456789'], 'a.txt')], createId);
+
+    expect(plan.newItems).toEqual([]);
+    expect(plan.reattachedIds).toEqual(['a']);
+    expect(plan.assignments.map((assignment) => assignment.itemId)).toEqual(['a']);
+    expect(
+      uploadQueueReducer([waiting], { type: 'filesAdded', newItems: [], reattachedIds: ['a'] }),
+    ).toEqual([queued('a')]);
+  });
+
+  it('adds a different file as a new item with a fresh idempotency key', () => {
+    const plan = planAddedFiles([waiting], [new File(['x'], 'a.txt')], createId);
+
+    expect(plan.reattachedIds).toEqual([]);
+    expect(plan.newItems).toHaveLength(1);
+    expect(plan.newItems[0]?.idempotencyKey).not.toBe(waiting.idempotencyKey);
   });
 });

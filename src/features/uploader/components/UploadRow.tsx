@@ -31,6 +31,8 @@ function describeStatus(item: UploadItem): string {
       return `Failed after ${item.attempt} attempts: ${item.error}`;
     case 'cancelled':
       return 'Cancelled';
+    case 'needs-reselect':
+      return 'Needs re-select: add this file again to resume';
     default:
       return assertNever(item);
   }

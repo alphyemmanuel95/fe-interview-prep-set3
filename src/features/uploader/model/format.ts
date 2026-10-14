@@ -22,6 +22,7 @@ const SUMMARY_LABELS = {
   done: 'done',
   failed: 'failed',
   cancelled: 'cancelled',
+  'needs-reselect': 'need re-select',
 } as const satisfies Record<UploadStatus, string>;
 
 export function formatQueueSummary(queue: UploadQueue): string {

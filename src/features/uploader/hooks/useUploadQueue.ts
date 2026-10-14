@@ -1,7 +1,8 @@
 import { useEffect, useEffectEvent, useReducer, useRef } from 'react';
 import type { UploadTransport } from '../api/uploadTransport';
 import type { UploadItem, UploadQueue } from '../model/uploadQueue';
-import { createQueuedItem, selectItemsToStart, uploadQueueReducer } from '../model/uploadQueue';
+import { loadQueue, saveQueue, toPersistedQueue } from '../model/persistence';
+import { planAddedFiles, selectItemsToStart, uploadQueueReducer } from '../model/uploadQueue';
 
 export type UploadQueueControls = Readonly<{
   items: UploadQueue;
@@ -11,14 +12,13 @@ export type UploadQueueControls = Readonly<{
   remove: (id: string) => void;
 }>;
 
-const INITIAL_QUEUE: UploadQueue = [];
-
 function createId(): string {
   return crypto.randomUUID();
 }
 
 export function useUploadQueue(transport: UploadTransport): UploadQueueControls {
-  const [items, dispatch] = useReducer(uploadQueueReducer, INITIAL_QUEUE);
+  // Lazy initialiser: storage is read once on mount, not on every render.
+  const [items, dispatch] = useReducer(uploadQueueReducer, undefined, loadQueue);
   // File objects and AbortControllers are not serialisable and never drive rendering, so they
   // live in refs keyed by item id rather than in reducer state.
   const filesRef = useRef(new Map<string, File>());
@@ -70,6 +70,18 @@ export function useUploadQueue(transport: UploadTransport): UploadQueueControls 
     }
   }, [items]);
 
+  // Progress events re-render many times a second but never change what is persisted, so only
+  // write when the stored snapshot (names, sizes, keys, statuses) actually differs.
+  const lastSavedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const snapshot = toPersistedQueue(items);
+    const serialised = JSON.stringify(snapshot);
+    if (serialised !== lastSavedRef.current) {
+      lastSavedRef.current = serialised;
+      saveQueue(snapshot);
+    }
+  }, [items]);
+
   // Backoff: each item entering "retrying" gets one timer that re-queues it after its delay.
   useEffect(() => {
     const retryTimers = retryTimersRef.current;
@@ -112,12 +124,11 @@ export function useUploadQueue(transport: UploadTransport): UploadQueueControls 
   }
 
   function addFiles(files: readonly File[]): void {
-    const newItems = files.map((file) => {
-      const item = createQueuedItem(file, createId);
-      filesRef.current.set(item.id, file);
-      return item;
-    });
-    dispatch({ type: 'filesAdded', items: newItems });
+    const { newItems, reattachedIds, assignments } = planAddedFiles(items, files, createId);
+    for (const { itemId, file } of assignments) {
+      filesRef.current.set(itemId, file);
+    }
+    dispatch({ type: 'filesAdded', newItems, reattachedIds });
   }
 
   function cancel(id: string): void {

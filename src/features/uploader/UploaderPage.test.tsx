@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { UploadOutcome, UploadRequest, UploadTransport } from './api/uploadTransport';
+import { saveQueue } from './model/persistence';
 import { MAX_ATTEMPTS, RETRY_DELAYS_MS } from './model/uploadQueue';
 import { UploaderPage } from './UploaderPage';
 
@@ -81,6 +82,27 @@ describe('UploaderPage', () => {
     await waitFor(() => {
       expect(uploads.map(nameOf)).toEqual(['file-1.txt', 'file-2.txt']);
     });
+  });
+
+  it('restores the queue after a reload and resumes a re-selected file with its key', async () => {
+    saveQueue([
+      { id: 'a', name: 'report.pdf', size: 3, idempotencyKey: 'key-report', status: 'uploading' },
+      { id: 'b', name: 'notes.txt', size: 1, idempotencyKey: 'key-notes', status: 'done' },
+    ]);
+    const user = userEvent.setup();
+    const { transport, uploads } = createControllableTransport();
+    render(<UploaderPage transport={transport} />);
+
+    expect(screen.getByText('Needs re-select: add this file again to resume')).toBeInTheDocument();
+    expect(screen.getByText('Uploaded')).toBeInTheDocument();
+    expect(uploads).toHaveLength(0);
+
+    await user.upload(screen.getByLabelText('Choose files'), new File(['abc'], 'report.pdf'));
+
+    await waitFor(() => {
+      expect(uploads[0]?.request.idempotencyKey).toBe('key-report');
+    });
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 
   it('aborts the request on cancel and gives its slot to the next file', async () => {
