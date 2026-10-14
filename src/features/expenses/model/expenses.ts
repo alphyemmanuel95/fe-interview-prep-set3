@@ -103,6 +103,12 @@ export const toMonthKey = (date: Date): MonthKey =>
 
 export const toIsoDate = (date: Date): string => `${toMonthKey(date)}-${pad2(date.getDate())}`;
 
+// Date rolls over year boundaries for us: month index -1 is December of the previous year.
+export function shiftMonth(month: MonthKey, delta: number): MonthKey {
+  const [year = 0, monthNumber = 1] = month.split('-').map(Number);
+  return toMonthKey(new Date(year, monthNumber - 1 + delta, 1));
+}
+
 // ISO dates parse as UTC midnight, so formatting in UTC keeps the calendar day from shifting
 // with the viewer's time zone.
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' });

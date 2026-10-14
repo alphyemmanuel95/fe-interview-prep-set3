@@ -1,0 +1,40 @@
+.expense-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.expense-filter-bar__legend {
+  padding: 0 var(--space-1);
+  font-weight: 600;
+}
+
+.expense-filter-bar__month {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.expense-filter-bar__step {
+  flex: none;
+  min-width: var(--control-height);
+  min-height: var(--control-height);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-heading);
+  cursor: pointer;
+}
+
+.expense-filter-bar__step:hover {
+  background: var(--color-surface-alt);
+}
+
+.expense-filter-bar__month .form-field__control {
+  min-width: 0;
+}

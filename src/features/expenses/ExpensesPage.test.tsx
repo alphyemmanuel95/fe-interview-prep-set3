@@ -154,6 +154,17 @@ describe('ExpensesPage', () => {
     expect(within(form).getByLabelText('Category')).toHaveValue('Food');
   });
 
+  it('steps the month filter with the previous and next buttons', async () => {
+    const user = userEvent.setup();
+    const { router } = renderPage('/expenses?month=2026-01');
+
+    await user.click(screen.getByRole('button', { name: 'Previous month' }));
+    expect(within(filters()).getByLabelText('Month')).toHaveValue('2025-12');
+    await user.click(screen.getByRole('button', { name: 'Next month' }));
+    await user.click(screen.getByRole('button', { name: 'Next month' }));
+    expect(router.state.location.search).toBe('?month=2026-02');
+  });
+
   it('falls back to the current month and all categories for invalid URL filters', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 14));

@@ -1,8 +1,7 @@
-import { type JSX, useId, useRef, useState } from 'react';
+import { type JSX, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import {
   ALL_CATEGORIES,
-  CATEGORIES,
   type ExpenseDraft,
   defaultCategoryFor,
   defaultDateForMonth,
@@ -11,7 +10,7 @@ import {
 } from './model/expenses';
 import { ExpenseForm } from './components/ExpenseForm';
 import { ExpenseList } from './components/ExpenseList';
-import { FormField } from './components/FormField';
+import { ExpenseFilterBar } from './components/ExpenseFilterBar';
 import { MonthSummary } from './components/MonthSummary';
 import { useExpenseFilters } from './hooks/useExpenseFilters';
 import { useExpenses } from './hooks/useExpenses';
@@ -24,7 +23,6 @@ export function ExpensesPage(): JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null);
   const listHeadingRef = useRef<HTMLHeadingElement>(null);
   const editButtonsRef = useRef(new Map<string, HTMLButtonElement>());
-  const filterId = useId();
 
   // Totals are derived from the expense list, never stored beside it: with a single source of
   // truth, an add, edit or delete cannot leave a stale total behind. Recomputing a few hundred
@@ -83,41 +81,7 @@ export function ExpensesPage(): JSX.Element {
         Expense Tracker
       </h1>
 
-      <fieldset className="expenses-page__filters">
-        <legend className="expenses-page__legend">Filters</legend>
-        <FormField id={`${filterId}-month`} label="Month" error={undefined}>
-          {(controlProps) => (
-            <input
-              {...controlProps}
-              className="form-field__control"
-              type="month"
-              value={month}
-              onChange={(event) => {
-                setMonth(event.target.value);
-              }}
-            />
-          )}
-        </FormField>
-        <FormField id={`${filterId}-category`} label="Category" error={undefined}>
-          {(controlProps) => (
-            <select
-              {...controlProps}
-              className="form-field__control"
-              value={category}
-              onChange={(event) => {
-                setCategory(event.target.value);
-              }}
-            >
-              <option value={ALL_CATEGORIES}>All categories</option>
-              {CATEGORIES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          )}
-        </FormField>
-      </fieldset>
+      <ExpenseFilterBar filters={filters} onMonthChange={setMonth} onCategoryChange={setCategory} />
 
       <div className="expenses-page__grid">
         <ExpenseForm

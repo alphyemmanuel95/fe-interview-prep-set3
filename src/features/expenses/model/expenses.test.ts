@@ -9,6 +9,7 @@ import {
   isIsoDate,
   selectMonthTotals,
   selectVisibleExpenses,
+  shiftMonth,
   toMonthKey,
   validateExpense,
 } from './expenses';
@@ -136,6 +137,12 @@ describe('guards and dates', () => {
 
   it('builds month keys in local time', () => {
     expect(toMonthKey(new Date(2026, 0, 31))).toBe('2026-01');
+  });
+
+  it('steps months across year boundaries', () => {
+    expect(shiftMonth('2026-01', -1)).toBe('2025-12');
+    expect(shiftMonth('2026-12', 1)).toBe('2027-01');
+    expect(shiftMonth('2026-10', 1)).toBe('2026-11');
   });
 
   it('defaults a new expense into the viewed month and category', () => {
