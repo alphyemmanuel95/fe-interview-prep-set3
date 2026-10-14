@@ -27,8 +27,9 @@
   cursor: pointer;
 }
 
+/* Lighter than the active row and without its border, so hover never reads as a second active option. */
 .suggestions__option:hover {
-  background: var(--color-surface-alt);
+  background: var(--color-bg);
 }
 
 /* Active state is conveyed by a border as well as the background, not by colour alone. */
