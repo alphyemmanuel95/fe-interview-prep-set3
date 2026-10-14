@@ -66,8 +66,9 @@ export function SearchStatus({
   const message = toMessage(state, query, isVisible, selected);
   return (
     <div className="search-status">
-      {/* The live region stays mounted and only its text changes, so every update is announced. */}
-      <p role="status" aria-live="polite" className={messageClassName(isError, selected !== null)}>
+      {/* role="status" is an implicit polite live region. It stays mounted and only its text
+          changes, so every update is announced. */}
+      <p role="status" className={messageClassName(isError, selected !== null)}>
         {message}
       </p>
       {isVisible && canRetry && isError && (
