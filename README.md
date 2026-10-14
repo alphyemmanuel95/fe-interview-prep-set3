@@ -6,8 +6,8 @@ Five React + TypeScript features, each shipped as its own branch, pull request a
 | --- | ----------------------- | ------------ | ---------------------------------------------------------------------- |
 | 1   | Expense Tracker         | `/expenses`  | [#6](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/6) |
 | 2   | City Typeahead          | `/typeahead` | [#7](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/7) |
-| 3   | Event Booking Form      | `/booking`   |                                                                        |
-| 4   | File Explorer Tree      | `/file-tree` |                                                                        |
+| 3   | Event Booking Form      | `/booking`   | [#9](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/9) |
+| 4   | File Explorer Tree      | `/file-tree` | [#8](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/8) |
 | 5   | Resumable File Uploader | `/uploader`  |                                                                        |
 
 Video:
