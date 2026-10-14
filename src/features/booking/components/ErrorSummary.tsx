@@ -5,15 +5,16 @@ import './ErrorSummary.css';
 type ErrorSummaryProps = Readonly<{
   errors: readonly FieldError[];
   /** The page focuses the summary after a blocked "Next"; the summary never focuses itself. */
-  ref: Ref<HTMLDivElement>;
+  ref: Ref<HTMLElement>;
 }>;
 
+// No role="alert": focus moves here after a blocked Next, which already makes screen readers read
+// it. A live region on top would announce the same content twice.
 export function ErrorSummary({ errors, ref }: ErrorSummaryProps): JSX.Element {
   return (
-    <div
+    <section
       ref={ref}
       className="error-summary"
-      role="alert"
       tabIndex={-1}
       aria-labelledby="booking-error-summary-title"
     >
@@ -25,6 +26,6 @@ export function ErrorSummary({ errors, ref }: ErrorSummaryProps): JSX.Element {
           <li key={error.field}>{error.message}</li>
         ))}
       </ul>
-    </div>
+    </section>
   );
 }

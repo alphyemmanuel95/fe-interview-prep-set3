@@ -28,7 +28,7 @@ export function BookingPage(): JSX.Element {
   const { draft, failedNextAttempts, submission } = state;
   const stepHeadingRef = useFocusOnChange<HTMLHeadingElement>(draft.step);
   // Declared after the heading focus so that, when both fire together, the error summary wins.
-  const errorSummaryRef = useFocusOnIncrease<HTMLDivElement>(failedNextAttempts);
+  const errorSummaryRef = useFocusOnIncrease<HTMLElement>(failedNextAttempts);
   // Errors are derived from the live draft, so fixing a field clears its message immediately.
   const errors = failedNextAttempts > 0 ? validateStep(draft.step, draft, today) : [];
   const isSubmitting = submission.status === 'submitting';

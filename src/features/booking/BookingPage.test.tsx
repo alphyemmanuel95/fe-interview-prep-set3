@@ -26,6 +26,16 @@ function getStepHeading(): HTMLElement {
   return screen.getByRole('heading', { level: 2 });
 }
 
+const ERROR_SUMMARY_NAME = 'Fix the following to continue';
+
+function getErrorSummary(): HTMLElement {
+  return screen.getByRole('region', { name: ERROR_SUMMARY_NAME });
+}
+
+function queryErrorSummary(): HTMLElement | null {
+  return screen.queryByRole('region', { name: ERROR_SUMMARY_NAME });
+}
+
 function getSeat(seatId: string): HTMLElement {
   return screen.getByRole('button', { name: new RegExp(`^Seat ${seatId},`) });
 }
@@ -58,11 +68,11 @@ describe('BookingPage', () => {
 
   it('blocks Next on an invalid step and shows clear errors', async () => {
     const { user } = setup();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(queryErrorSummary()).not.toBeInTheDocument();
 
     await clickNext(user);
 
-    const summary = screen.getByRole('alert');
+    const summary = getErrorSummary();
     expect(summary).toHaveFocus();
     expect(within(summary).getByText('Choose an event.')).toBeInTheDocument();
     expect(within(summary).getByText('Choose a date.')).toBeInTheDocument();
@@ -81,10 +91,10 @@ describe('BookingPage', () => {
 
     await user.click(nameInput);
     await user.type(nameInput, 'A');
-    expect(screen.queryByText('Fix the following to continue')).not.toBeInTheDocument();
+    expect(queryErrorSummary()).not.toBeInTheDocument();
     await user.type(nameInput, '{Backspace}');
 
-    expect(screen.getByText('Fix the following to continue')).toBeInTheDocument();
+    expect(getErrorSummary()).toBeInTheDocument();
     expect(nameInput).toHaveFocus();
   });
 
@@ -106,7 +116,7 @@ describe('BookingPage', () => {
     await completeEventStep(user);
 
     await clickNext(user);
-    expect(screen.getByRole('alert')).toHaveTextContent('Choose at least 1 seat.');
+    expect(getErrorSummary()).toHaveTextContent('Choose at least 1 seat.');
 
     expect(getSeat('A4')).toBeDisabled();
     await selectSeats(user, ['A1', 'A2', 'A3', 'A6', 'A7', 'A8']);
@@ -147,7 +157,7 @@ describe('BookingPage', () => {
     await user.type(screen.getByLabelText(/seat A1/), 'Asha');
     await user.type(screen.getByLabelText(/seat B3/), 'Ben');
     await clickNext(user);
-    expect(screen.getByRole('alert')).toHaveTextContent('Enter the attendee name for seat C1.');
+    expect(getErrorSummary()).toHaveTextContent('Enter the attendee name for seat C1.');
     await user.type(screen.getByLabelText(/seat C1/), 'Chen');
     await clickNext(user);
 
@@ -184,7 +194,7 @@ describe('BookingPage', () => {
     await user.click(screen.getByRole('button', { name: 'Confirm booking' }));
 
     expect(getStepHeading()).toHaveTextContent('Event & date');
-    expect(screen.getByText('Fix the following to continue').closest('[tabindex]')).toHaveFocus();
+    expect(getErrorSummary()).toHaveFocus();
     expect(screen.getByLabelText('Date')).toHaveAccessibleDescription(
       'Error: Choose today or a future date.',
     );
@@ -200,7 +210,7 @@ describe('BookingPage', () => {
     reload();
 
     expect(getStepHeading()).toHaveTextContent('Event & date');
-    expect(screen.getByText('Fix the following to continue')).toBeInTheDocument();
+    expect(getErrorSummary()).toBeInTheDocument();
     expect(screen.getByLabelText('Date')).toHaveAccessibleDescription(
       'Error: Choose today or a future date.',
     );
