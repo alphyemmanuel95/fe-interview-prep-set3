@@ -1,4 +1,4 @@
-import { Activity } from 'react';
+import { Activity, StrictMode } from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -11,6 +11,7 @@ import { UploaderPage } from './UploaderPage';
 type PendingUpload = Readonly<{
   request: UploadRequest;
   settle: (outcome: UploadOutcome) => void;
+  isSettled: () => boolean;
 }>;
 
 // A transport the test resolves by hand, counting how many uploads are in flight at once.
@@ -34,7 +35,7 @@ function createControllableTransport() {
       request.signal.addEventListener('abort', () => {
         settle({ kind: 'aborted' });
       });
-      uploads.push({ request, settle });
+      uploads.push({ request, settle, isSettled: () => isSettled });
     });
 
   return {
@@ -110,6 +111,63 @@ describe('UploaderPage', () => {
     );
     expect(getMaxInFlight()).toBe(MAX_CONCURRENT_UPLOADS);
     expect(uploads.map(nameOf)).toEqual(files.map((file) => file.name));
+  });
+
+  it(`stays within ${MAX_CONCURRENT_UPLOADS} uploads through failures, retries and cancels in StrictMode`, async () => {
+    enableDeterministicTimers();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { transport, uploads, getInFlight, getMaxInFlight } = createControllableTransport();
+    const pending = (): PendingUpload[] => uploads.filter((upload) => !upload.isSettled());
+    const expectWithinLimit = (): void => {
+      expect(getInFlight()).toBeLessThanOrEqual(MAX_CONCURRENT_UPLOADS);
+    };
+    render(
+      <StrictMode>
+        <UploaderPage transport={transport} />
+      </StrictMode>,
+    );
+
+    await user.upload(screen.getByLabelText('Choose files'), createFiles(7));
+    await advanceTime(0);
+    expect(uploads.map(nameOf)).toEqual(['file-1.txt', 'file-2.txt', 'file-3.txt']);
+
+    // A failure frees its slot while the item waits out its backoff.
+    act(() => {
+      uploads[0]?.settle(SERVER_ERROR);
+    });
+    await advanceTime(0);
+    expectWithinLimit();
+    expect(nameOf(uploads[3])).toBe('file-4.txt');
+
+    // Cancelling an in-flight upload frees its slot too.
+    await user.click(screen.getByRole('button', { name: 'Cancel file-2.txt' }));
+    await advanceTime(0);
+    expectWithinLimit();
+    expect(nameOf(uploads[4])).toBe('file-5.txt');
+
+    // The retry comes due while all slots are busy: it re-queues instead of starting a 4th.
+    await advanceTime(RETRY_DELAYS_MS[0]);
+    expectWithinLimit();
+    expect(uploads).toHaveLength(5);
+
+    // A manual retry also has to wait for a slot.
+    await user.click(screen.getByRole('button', { name: 'Retry file-2.txt' }));
+    await advanceTime(0);
+    expectWithinLimit();
+    expect(uploads).toHaveLength(5);
+
+    // Drain: complete whatever is in flight until nothing is left.
+    for (let upload = pending()[0]; upload !== undefined; upload = pending()[0]) {
+      const { name, size } = upload.request.file;
+      act(() => {
+        upload.settle({ kind: 'success', file: { id: name, name, size, duplicate: false } });
+      });
+      await advanceTime(0);
+      expectWithinLimit();
+    }
+
+    expect(screen.getByText('7 done.')).toBeInTheDocument();
+    expect(getMaxInFlight()).toBe(MAX_CONCURRENT_UPLOADS);
   });
 
   it('queues files dropped on the drop zone', async () => {
