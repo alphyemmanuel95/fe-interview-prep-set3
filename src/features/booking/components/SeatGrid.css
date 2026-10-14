@@ -97,6 +97,11 @@ button.seat-grid__seat {
   color: var(--color-on-primary);
 }
 
+/* Selecting a VIP seat must not hide that it is VIP: keep the gold border on the blue fill. */
+.seat-grid__seat--selected.seat-grid__seat--vip {
+  border-color: var(--seat-vip);
+}
+
 .seat-grid__seat--selected::after {
   content: '✓';
   position: absolute;
