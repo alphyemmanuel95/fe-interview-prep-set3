@@ -211,6 +211,16 @@ describe('CityCombobox keyboard and mouse', () => {
     expect(screen.getByText(/Selected:/)).toHaveTextContent('Selected: Delia Moss (Delft)');
   });
 
+  it('does not search for the selected name after a selection', async () => {
+    const { user } = await openWithResults();
+
+    await user.keyboard('{ArrowDown}{Enter}');
+    await finishTyping();
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+
   it('wraps from the first option to the last with ArrowUp', async () => {
     const { user } = await openWithResults();
 

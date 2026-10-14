@@ -16,8 +16,14 @@ const EMPTY_SUGGESTIONS: readonly CitySuggestion[] = [];
 // is exposed through aria-activedescendant so screen readers follow the arrow keys.
 export function CityCombobox(): JSX.Element {
   const [state, dispatch] = useReducer(comboboxReducer, initialComboboxState);
-  const debouncedQuery = useDebouncedValue(state.inputValue, SEARCH_DEBOUNCE_MS);
-  const search = useCitySearch(debouncedQuery);
+  // A committed selection is not a query: searching for the chosen name would send a request
+  // nobody asked for. Search goes idle at once and resumes when the user edits the text again.
+  const hasSelection = state.selected !== null;
+  const debouncedQuery = useDebouncedValue(
+    hasSelection ? '' : state.inputValue,
+    SEARCH_DEBOUNCE_MS,
+  );
+  const search = useCitySearch(hasSelection ? '' : debouncedQuery);
 
   const inputId = useId();
   const labelId = useId();
