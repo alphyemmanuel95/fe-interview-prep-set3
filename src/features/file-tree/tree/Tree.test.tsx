@@ -135,6 +135,14 @@ describe('Tree', () => {
     expect(item('Ada (CEO)')).toHaveFocus();
   });
 
+  it('moves focus from the tree container to its tab stop row', async () => {
+    const { user, item } = renderOrgChart(resolvingLoader());
+
+    await user.click(screen.getByRole('tree', { name: 'Org chart' }));
+
+    expect(item('Ada (CEO)')).toHaveFocus();
+  });
+
   it('selects the focused row with Enter and keeps a single tab stop', async () => {
     const { user, item } = renderOrgChart(resolvingLoader());
 

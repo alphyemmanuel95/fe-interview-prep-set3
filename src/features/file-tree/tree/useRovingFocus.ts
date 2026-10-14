@@ -60,6 +60,12 @@ export function useRovingFocus<T>(
 
   const handleFocus = (event: FocusEvent<HTMLElement>): void => {
     hasFocusWithinRef.current = true;
+    // The container is focusable only so clicks on its empty space land somewhere; pass that focus
+    // on to the tab stop so the visible focus ring is always on a row.
+    if (event.target === event.currentTarget && tabStopId !== null) {
+      focusRow(tabStopId);
+      return;
+    }
     const id = rowIdOf(event.target);
     if (id !== undefined) {
       setFocusedId(id);
