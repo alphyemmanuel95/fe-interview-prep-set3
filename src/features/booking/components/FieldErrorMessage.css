@@ -6,6 +6,6 @@
 
 /* A leading marker so the error is not signalled by colour alone. */
 .field-error::before {
-  content: '! ';
+  content: '! ' / '';
   font-weight: 700;
 }

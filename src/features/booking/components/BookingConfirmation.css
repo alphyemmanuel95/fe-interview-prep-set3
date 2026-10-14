@@ -11,7 +11,7 @@
 }
 
 .booking-confirmation__title::before {
-  content: '✓ ';
+  content: '✓ ' / '';
 }
 
 .booking-confirmation__reference {

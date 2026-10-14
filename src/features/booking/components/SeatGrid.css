@@ -132,7 +132,7 @@ button.seat-grid__seat {
 }
 
 .seat-grid__seat--selected::after {
-  content: '✓';
+  content: '✓' / '';
   position: absolute;
   top: -0.45rem;
   right: -0.35rem;
