@@ -95,3 +95,10 @@
   border-color: var(--color-border);
   color: var(--color-text-muted);
 }
+
+/* Comfortable touch targets on small screens. */
+@media (max-width: 40rem) {
+  .upload-row__button {
+    min-height: 2.75rem;
+  }
+}
