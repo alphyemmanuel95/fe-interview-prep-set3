@@ -14,7 +14,11 @@ export type TreeUrlState = Readonly<{
   expandedIds: ReadonlySet<string>;
   selectedId: string | null;
   setExpanded: (id: string, isExpanded: boolean) => void;
-  select: (id: string) => void;
+  /**
+   * Selects `id` and opens `ancestorIds` in the same history entry, so the link always shows the
+   * selection — even when it was picked from search results whose folders were only search-opened.
+   */
+  select: (id: string, ancestorIds: readonly string[]) => void;
 }>;
 
 /** URLs are user input: blank or repeated ids are dropped; unknown ids simply match nothing. */
@@ -58,12 +62,16 @@ export function useTreeUrlState(): TreeUrlState {
     });
   };
 
-  const select = (id: string): void => {
-    if (id === selectedId) {
+  const select = (id: string, ancestorIds: readonly string[]): void => {
+    const hiddenAncestorIds = ancestorIds.filter((ancestorId) => !expandedIds.has(ancestorId));
+    if (id === selectedId && hiddenAncestorIds.length === 0) {
       return;
     }
     setSearchParams((params) => {
       params.set(SELECTED_PARAM, id);
+      if (hiddenAncestorIds.length > 0) {
+        params.set(EXPANDED_PARAM, [...expandedIds, ...hiddenAncestorIds].join(ID_SEPARATOR));
+      }
       return params;
     });
   };

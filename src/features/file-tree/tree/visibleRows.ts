@@ -120,3 +120,18 @@ export function loadStatusMessage<T>(rows: readonly VisibleRow<T>[]): string {
   }
   return rows.some((row) => row.kind === 'error') ? 'Some items could not be loaded.' : '';
 }
+
+/** Ids of the rows above `id`, outermost first, following `parentId` through the visible rows. */
+export function ancestorIdsOf<T>(
+  rows: readonly VisibleRow<T>[],
+  indexById: ReadonlyMap<string, number>,
+  id: string,
+): readonly string[] {
+  const ancestorIds: string[] = [];
+  let parentId = rows[indexById.get(id) ?? -1]?.parentId ?? null;
+  while (parentId !== null) {
+    ancestorIds.unshift(parentId);
+    parentId = rows[indexById.get(parentId) ?? -1]?.parentId ?? null;
+  }
+  return ancestorIds;
+}

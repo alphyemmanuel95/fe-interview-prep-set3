@@ -15,7 +15,7 @@ import { isToggleTarget, rowIdOf } from './treeDom';
 import { getTreeKeyAction, type TreeKeyAction } from './treeNavigation';
 import { TreeErrorRow, TreeItemRow } from './TreeRow';
 import { useChildrenLoader, type LoadChildren } from './useChildrenLoader';
-import { flattenVisibleRows, loadStatusMessage, pickTabStop } from './visibleRows';
+import { ancestorIdsOf, flattenVisibleRows, loadStatusMessage, pickTabStop } from './visibleRows';
 import './Tree.css';
 
 // Generic over the item type: nothing here knows about files. Callers describe their data through
@@ -30,7 +30,8 @@ export type TreeProps<T> = Readonly<{
   expandedIds: ReadonlySet<string>;
   selectedId: string | null;
   onExpandedChange: (id: string, isExpanded: boolean) => void;
-  onSelect: (id: string) => void;
+  /** Receives the selected row's ancestors (outermost first), so callers can keep it reachable. */
+  onSelect: (id: string, ancestorIds: readonly string[]) => void;
   /** Restricts rendering to these ids (e.g. search results plus their ancestors). */
   visibleIds?: ReadonlySet<string> | undefined;
   renderIcon?: (item: T, isExpanded: boolean) => ReactNode;
@@ -91,7 +92,7 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
     if (row?.kind === 'error') {
       load(row.parent);
     } else if (row !== undefined) {
-      onSelect(id);
+      onSelect(id, ancestorIdsOf(rows, indexById, id));
     }
   };
 

@@ -49,11 +49,25 @@ function pickSearchTerm(): string {
   return term;
 }
 
+/** A node at least three levels down whose name matches nothing else, outside the flaky folder. */
+function pickUniqueDeepNode() {
+  const node = searchIndex.find(
+    (entry) =>
+      entry.ancestorIds.length >= 2 &&
+      isOutsideFlakyFolder(entry) &&
+      matchesOf(entry.label).length === 1,
+  );
+  if (node === undefined) {
+    throw new Error('The mock file system has no uniquely named deep node');
+  }
+  return node;
+}
+
 function renderAt(url: string) {
   const router = createMemoryRouter(routes, { initialEntries: [url] });
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
-  render(<RouterProvider router={router} />);
-  return { router, user };
+  const { unmount } = render(<RouterProvider router={router} />);
+  return { router, user, unmount };
 }
 
 const MAX_LEVEL = 6;
@@ -150,6 +164,32 @@ describe('FileTreePage', () => {
     }
     expect(screen.queryByRole('treeitem', { name: 'package.json' })).not.toBeInTheDocument();
     expect(screen.getByText(`${matches.length} matches`)).toBeInTheDocument();
+  });
+
+  it('shares a node picked from search results with its folders open', async () => {
+    const node = pickUniqueDeepNode();
+    const first = renderAt('/file-tree');
+
+    await first.user.type(screen.getByRole('searchbox', { name: 'Search files' }), node.label);
+    for (let level = 1; level < MAX_LEVEL; level += 1) {
+      await finishLoads();
+    }
+    await first.user.click(screen.getByRole('treeitem', { name: node.label }));
+
+    const { search } = first.router.state.location;
+    const params = new URLSearchParams(search);
+    expect(params.get('selected')).toBe(node.id);
+    expect(params.get('expanded')?.split(',')).toEqual(node.ancestorIds);
+
+    // Open the copied link in a fresh app, as a colleague would.
+    first.unmount();
+    renderAt(`/file-tree${search}`);
+    for (let level = 1; level <= node.ancestorIds.length; level += 1) {
+      await finishLoads();
+    }
+    const selected = screen.getByRole('treeitem', { selected: true });
+    expect(selected).toHaveAccessibleName(node.label);
+    expect(selected).toHaveAttribute('aria-level', String(node.ancestorIds.length + 1));
   });
 
   it('says so when nothing matches the search', async () => {
