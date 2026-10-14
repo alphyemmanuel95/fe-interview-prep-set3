@@ -3,6 +3,7 @@ import {
   getSeatPriceCents,
   getSeatTier,
   isSeatBooked,
+  MAX_SEATS_PER_BOOKING,
   SEAT_NUMBERS,
   SEAT_ROWS,
   SEAT_TIERS,
@@ -29,10 +30,17 @@ function getSeatStatus(seatId: SeatId, selectedSeatIds: readonly SeatId[]): Seat
 }
 
 // State lives in the accessible name and `aria-pressed`, not only in the colour.
-function getSeatLabel(seatId: SeatId, status: SeatStatus): string {
+// A disabled seat also says why it is disabled, so screen reader users aren't left guessing.
+function getSeatLabel(seatId: SeatId, status: SeatStatus, isAtLimit: boolean): string {
   const tierLabel = SEAT_TIERS[getSeatTier(seatId)].label;
   const label = `Seat ${seatId}, ${tierLabel}, ${formatPrice(getSeatPriceCents(seatId))}`;
-  return status === 'booked' ? `${label}, already booked` : label;
+  if (status === 'booked') {
+    return `${label}, already booked`;
+  }
+  if (status === 'available' && isAtLimit) {
+    return `${label}, unavailable: ${MAX_SEATS_PER_BOOKING}-seat limit reached`;
+  }
+  return label;
 }
 
 function getRowLabel(row: SeatRow): string {
@@ -48,7 +56,7 @@ export function SeatGrid({ selectedSeatIds, isAtLimit, onSeatToggle }: SeatGridP
         key={seatId}
         type="button"
         className={`seat-grid__seat seat-grid__seat--${status} seat-grid__seat--${getSeatTier(seatId)}`}
-        aria-label={getSeatLabel(seatId, status)}
+        aria-label={getSeatLabel(seatId, status, isAtLimit)}
         aria-pressed={status === 'selected'}
         disabled={status === 'booked' || (status === 'available' && isAtLimit)}
         onClick={() => {

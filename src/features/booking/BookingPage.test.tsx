@@ -128,6 +128,9 @@ describe('BookingPage', () => {
     await selectSeats(user, ['A1', 'A2', 'A3', 'A6', 'A7', 'A8']);
 
     expect(getSeat('C1')).toBeDisabled();
+    expect(getSeat('C1')).toHaveAccessibleName(
+      'Seat C1, Standard, ₹250.00, unavailable: 6-seat limit reached',
+    );
     expect(getSeat('A8')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText(/reached the maximum of 6 seats/)).toBeInTheDocument();
   });
