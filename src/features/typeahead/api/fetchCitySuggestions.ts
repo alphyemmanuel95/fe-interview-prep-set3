@@ -4,6 +4,7 @@ import type { CitySuggestion } from '../model/types';
 const SEARCH_URL = 'https://dummyjson.com/users/search';
 // Ask the API for only the fields we render, keeping the payload small.
 const SELECTED_FIELDS = 'firstName,lastName,address';
+const UNEXPECTED_RESPONSE = 'Search returned an unexpected response';
 
 type ApiUser = Readonly<{
   id: number;
@@ -59,9 +60,20 @@ export async function fetchCitySuggestions(
   if (!response.ok) {
     throw new Error(`Search failed with HTTP ${response.status}`);
   }
-  const suggestions = parseCitySuggestions(await response.json());
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch (error: unknown) {
+    // An abort while reading the body must stay an AbortError so callers can recognise it.
+    if (signal.aborted) {
+      throw error;
+    }
+    // A non-JSON body (e.g. a proxy's HTML error page) breaks the contract like a wrong shape does.
+    throw new Error(UNEXPECTED_RESPONSE, { cause: error });
+  }
+  const suggestions = parseCitySuggestions(body);
   if (suggestions === null) {
-    throw new Error('Search returned an unexpected response');
+    throw new Error(UNEXPECTED_RESPONSE);
   }
   return suggestions;
 }

@@ -59,6 +59,17 @@ describe('fetchCitySuggestions', () => {
     );
   });
 
+  it('throws the contract error when the body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(new Response('<html>Bad gateway</html>')),
+    );
+
+    await expect(fetchCitySuggestions('del', new AbortController().signal)).rejects.toThrow(
+      'unexpected response',
+    );
+  });
+
   it('throws when the body does not match the contract', async () => {
     vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(Response.json({ items: [] })));
 
