@@ -22,7 +22,7 @@ function describeStatus(state: CitySearchState, query: string): string {
     case 'loading':
       return 'Searching…';
     case 'error':
-      return `Couldn't load results (${state.message}).`;
+      return "Couldn't load results. Check your connection and retry.";
     case 'empty':
       return `No results for '${query}'`;
     case 'success':

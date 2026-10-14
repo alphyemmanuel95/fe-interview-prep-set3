@@ -5,20 +5,15 @@ import type { CitySearchState, CitySuggestion } from '../model/types';
 
 type SuggestionCache = ReadonlyMap<string, readonly CitySuggestion[]>;
 
-type SearchFailure = Readonly<{ query: string; message: string }>;
-
 export type CitySearch = Readonly<{
   state: CitySearchState;
   retry: () => void;
 }>;
 
-const toErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : 'Unknown error';
-
 function deriveState(
   query: string,
   cache: SuggestionCache,
-  failure: SearchFailure | null,
+  failedQuery: string | null,
 ): CitySearchState {
   if (query === '') {
     return { status: 'idle' };
@@ -27,8 +22,8 @@ function deriveState(
   if (cached !== undefined) {
     return cached.length === 0 ? { status: 'empty' } : { status: 'success', suggestions: cached };
   }
-  if (failure?.query === query) {
-    return { status: 'error', message: failure.message };
+  if (failedQuery === query) {
+    return { status: 'error' };
   }
   return { status: 'loading' };
 }
@@ -42,15 +37,15 @@ export function useCitySearch(rawQuery: string): CitySearch {
   const [cache, setCache] = useState<SuggestionCache>(() => new Map());
   // Only successes are cached. The last failure is kept separately so Retry can clear it and
   // trigger a fresh request instead of replaying a cached error.
-  const [failure, setFailure] = useState<SearchFailure | null>(null);
+  const [failedQuery, setFailedQuery] = useState<string | null>(null);
   // A failure belongs to the query that produced it. Drop it as soon as the query moves on, so
   // returning to that query refetches instead of replaying a stale error. Adjusting state during
   // render (rather than in an effect) avoids rendering the stale error even once.
-  if (failure !== null && failure.query !== query) {
-    setFailure(null);
+  if (failedQuery !== null && failedQuery !== query) {
+    setFailedQuery(null);
   }
   const isCached = cache.has(query);
-  const hasFailed = failure?.query === query;
+  const hasFailed = failedQuery === query;
 
   useEffect(() => {
     // A cache hit resolves synchronously during render: no request, no loading flash.
@@ -67,12 +62,12 @@ export function useCitySearch(rawQuery: string): CitySearch {
         }
         setCache((previous) => new Map(previous).set(query, suggestions));
       },
-      (error: unknown) => {
+      () => {
         // An aborted request was superseded or unmounted; it is not a failure the user should see.
         if (controller.signal.aborted) {
           return;
         }
-        setFailure({ query, message: toErrorMessage(error) });
+        setFailedQuery(query);
       },
     );
     // Abort (not just ignore) the in-flight request when a newer query starts or on unmount,
@@ -83,9 +78,9 @@ export function useCitySearch(rawQuery: string): CitySearch {
   }, [query, isCached, hasFailed]);
 
   return {
-    state: deriveState(query, cache, failure),
+    state: deriveState(query, cache, failedQuery),
     retry: () => {
-      setFailure(null);
+      setFailedQuery(null);
     },
   };
 }

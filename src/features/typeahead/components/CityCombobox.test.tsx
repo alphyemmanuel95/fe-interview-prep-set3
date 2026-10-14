@@ -172,7 +172,9 @@ describe('CityCombobox states', () => {
 
     await user.type(input, 'del');
     await finishTyping();
-    expect(screen.getByRole('status')).toHaveTextContent(/Couldn't load results/);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      "Couldn't load results. Check your connection and retry.",
+    );
 
     await user.click(screen.getByRole('button', { name: 'Retry' }));
     await settleRequests();
