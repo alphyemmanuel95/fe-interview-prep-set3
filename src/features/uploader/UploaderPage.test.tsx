@@ -105,6 +105,28 @@ describe('UploaderPage', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 
+  it('warns before closing the tab only while uploads are running', async () => {
+    const user = userEvent.setup();
+    const { transport, uploads } = createControllableTransport();
+    const isUnloadPrevented = (): boolean => {
+      const event = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    render(<UploaderPage transport={transport} />);
+    expect(isUnloadPrevented()).toBe(false);
+
+    await user.upload(screen.getByLabelText('Choose files'), createFiles(1));
+    expect(isUnloadPrevented()).toBe(true);
+
+    const stored = { id: 'f1', name: 'file-1.txt', size: 1, duplicate: false };
+    act(() => {
+      uploads[0]?.settle({ kind: 'success', file: stored });
+    });
+    expect(await screen.findByText('Uploaded')).toBeInTheDocument();
+    expect(isUnloadPrevented()).toBe(false);
+  });
+
   it('aborts the request on cancel and gives its slot to the next file', async () => {
     const user = userEvent.setup();
     const { transport, uploads, getInFlight } = createControllableTransport();

@@ -4,9 +4,10 @@ import { xhrUploadTransport } from './api/uploadTransport';
 import type { UploadTransport } from './api/uploadTransport';
 import { DropZone } from './components/DropZone';
 import { UploadRow } from './components/UploadRow';
+import { useBeforeUnloadWarning } from './hooks/useBeforeUnloadWarning';
 import { useUploadQueue } from './hooks/useUploadQueue';
 import { formatQueueSummary } from './model/format';
-import { MAX_CONCURRENT_UPLOADS } from './model/uploadQueue';
+import { MAX_CONCURRENT_UPLOADS, isActive } from './model/uploadQueue';
 import './UploaderPage.css';
 
 type UploaderPageProps = Readonly<{
@@ -17,6 +18,7 @@ type UploaderPageProps = Readonly<{
 export function UploaderPage({ transport = xhrUploadTransport }: UploaderPageProps): JSX.Element {
   const { items, addFiles, cancel, retry, remove } = useUploadQueue(transport);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  useBeforeUnloadWarning(items.some(isActive));
 
   function handleRemove(id: string): void {
     remove(id);
