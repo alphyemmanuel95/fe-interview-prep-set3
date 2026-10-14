@@ -2,13 +2,13 @@
 
 Five React + TypeScript features, each shipped as its own branch, pull request and merge.
 
-| #   | Question                | Route        | PR link                                                                |
-| --- | ----------------------- | ------------ | ---------------------------------------------------------------------- |
-| 1   | Expense Tracker         | `/expenses`  | [#6](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/6) |
-| 2   | City Typeahead          | `/typeahead` | [#7](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/7) |
-| 3   | Event Booking Form      | `/booking`   | [#9](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/9) |
-| 4   | File Explorer Tree      | `/file-tree` | [#8](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/8) |
-| 5   | Resumable File Uploader | `/uploader`  |                                                                        |
+| #   | Question                | Route        | PR link                                                                  |
+| --- | ----------------------- | ------------ | ------------------------------------------------------------------------ |
+| 1   | Expense Tracker         | `/expenses`  | [#6](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/6)   |
+| 2   | City Typeahead          | `/typeahead` | [#7](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/7)   |
+| 3   | Event Booking Form      | `/booking`   | [#9](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/9)   |
+| 4   | File Explorer Tree      | `/file-tree` | [#8](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/8)   |
+| 5   | Resumable File Uploader | `/uploader`  | [#10](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/10) |
 
 Video:
 
@@ -29,6 +29,8 @@ Requires Node 22+.
 npm ci
 npm run dev        # http://localhost:5173
 ```
+
+Q5 uploads go to a mock `POST /api/upload` endpoint served by a Vite dev-server plugin (`mock-api/`). It is slow, reports progress, fails about 25% of the time and deduplicates retries by `Idempotency-Key`. The mock only exists under `npm run dev`, not in a production build.
 
 ## Scripts
 
