@@ -72,7 +72,12 @@ function updateDraft(state: BookingState, draft: BookingDraft): BookingState {
 }
 
 function goToStep(state: BookingState, step: BookingStep): BookingState {
-  return { ...state, draft: { ...state.draft, step }, failedNextAttempts: 0 };
+  // Navigating mid-submit would let the user edit a booking that is already being sent.
+  if (state.submission.status === 'submitting') {
+    return state;
+  }
+  // A failed submit's message belongs to that attempt; it shouldn't greet the user on return.
+  return createBookingState({ ...state.draft, step });
 }
 
 export function bookingReducer(state: BookingState, action: BookingAction): BookingState {
