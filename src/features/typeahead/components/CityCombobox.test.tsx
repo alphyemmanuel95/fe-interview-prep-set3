@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SEARCH_DEBOUNCE_MS } from '../model/constants';
@@ -36,26 +36,46 @@ const respondNeverUntilAborted: typeof fetch = (_input, init) =>
     });
   });
 
+// delay: null makes each typing call one microtask chain, so no timer (debounce or wall clock)
+// can fire between keystrokes; the debounce only elapses when a test calls finishTyping().
+const USER_EVENT_OPTIONS = { delay: null } as const;
+
 let fetchMock: ReturnType<typeof vi.fn<typeof fetch>>;
 
-function setup(): { user: ReturnType<typeof userEvent.setup>; input: HTMLElement } {
-  const user = userEvent.setup({
-    advanceTimers: (delayMs) => {
-      vi.advanceTimersByTime(delayMs);
-    },
-  });
-  render(<CityCombobox />);
-  return { user, input: screen.getByRole('combobox', { name: 'Search people by name or city' }) };
+type SetupResult = Readonly<{
+  user: ReturnType<typeof userEvent.setup>;
+  input: HTMLElement;
+  unmount: () => void;
+}>;
+
+function setup(): SetupResult {
+  const user = userEvent.setup(USER_EVENT_OPTIONS);
+  const { unmount } = render(<CityCombobox />);
+  return {
+    user,
+    input: screen.getByRole('combobox', { name: 'Search people by name or city' }),
+    unmount,
+  };
 }
 
-/** Lets the debounce elapse so the latest query is searched. */
+/** Moves the fake clock past the debounce, then lets the stubbed response settle. */
 async function finishTyping(): Promise<void> {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
   });
+  await settleRequests();
+}
+
+/** Flushes the stubbed fetch's promise chain and the resulting render. */
+async function settleRequests(): Promise<void> {
+  await act(async () => {
+    await vi.runOnlyPendingTimersAsync();
+  });
 }
 
 beforeEach(() => {
+  // shouldAdvanceTime is required: RTL's asyncWrapper (used by user-event) awaits a setTimeout(0)
+  // and only auto-advances Jest's fake timers, so under Vitest it would otherwise hang.
   vi.useFakeTimers({ shouldAdvanceTime: true });
   fetchMock = vi.fn<typeof fetch>(respondFromFixtures);
   vi.stubGlobal('fetch', fetchMock);
@@ -71,13 +91,11 @@ describe('CityCombobox search', () => {
 
     await user.type(input, 'del');
     await finishTyping();
-    expect(await screen.findByRole('option', { name: 'Fidel Ortiz, Lima' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Fidel Ortiz, Lima' })).toBeInTheDocument();
 
     await user.type(input, 'h');
     await finishTyping();
-    await waitFor(() => {
-      expect(screen.queryByRole('option', { name: 'Fidel Ortiz, Lima' })).not.toBeInTheDocument();
-    });
+    expect(screen.queryByRole('option', { name: 'Fidel Ortiz, Lima' })).not.toBeInTheDocument();
 
     await user.type(input, '{Backspace}');
     await finishTyping();
@@ -94,7 +112,7 @@ describe('CityCombobox search', () => {
     await user.type(input, 'delh');
     await finishTyping();
 
-    await screen.findByRole('option', { name: 'Adele Hart, Delhi' });
+    expect(screen.getByRole('option', { name: 'Adele Hart, Delhi' })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
@@ -113,21 +131,16 @@ describe('CityCombobox search', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(firstSignal?.aborted).toBe(true);
-    expect(await screen.findByRole('option', { name: 'Adele Hart, Delhi' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Adele Hart, Delhi' })).toBeInTheDocument();
     // The abort is a cancellation, not a failure.
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
 
   it('aborts the in-flight request on unmount', async () => {
     fetchMock.mockImplementationOnce(respondNeverUntilAborted);
-    const user = userEvent.setup({
-      advanceTimers: (delayMs) => {
-        vi.advanceTimersByTime(delayMs);
-      },
-    });
-    const { unmount } = render(<CityCombobox />);
+    const { user, input, unmount } = setup();
 
-    await user.type(screen.getByRole('combobox'), 'del');
+    await user.type(input, 'del');
     await finishTyping();
     unmount();
 
@@ -151,11 +164,12 @@ describe('CityCombobox states', () => {
 
     await user.type(input, 'del');
     await finishTyping();
-    expect(await screen.findByRole('status')).toHaveTextContent(/Couldn't load results/);
+    expect(screen.getByRole('status')).toHaveTextContent(/Couldn't load results/);
 
     await user.click(screen.getByRole('button', { name: 'Retry' }));
+    await settleRequests();
 
-    expect(await screen.findByRole('option', { name: 'Delia Moss, Delft' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Delia Moss, Delft' })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(input).toHaveFocus();
   });
@@ -166,22 +180,17 @@ describe('CityCombobox states', () => {
     await user.type(input, 'zzz');
     await finishTyping();
 
-    await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent("No results for 'zzz'");
-    });
+    expect(screen.getByRole('status')).toHaveTextContent("No results for 'zzz'");
     expect(input).toHaveAttribute('aria-expanded', 'false');
   });
 });
 
 describe('CityCombobox keyboard and mouse', () => {
-  async function openWithResults(): Promise<{
-    user: ReturnType<typeof userEvent.setup>;
-    input: HTMLElement;
-  }> {
+  async function openWithResults(): Promise<SetupResult> {
     const context = setup();
     await context.user.type(context.input, 'del');
     await finishTyping();
-    await screen.findByRole('option', { name: 'Fidel Ortiz, Lima' });
+    expect(screen.getByRole('option', { name: 'Fidel Ortiz, Lima' })).toBeInTheDocument();
     return context;
   }
 
