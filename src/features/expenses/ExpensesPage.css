@@ -1,0 +1,8 @@
+.expenses-page {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.expenses-page__title {
+  margin: 0;
+}

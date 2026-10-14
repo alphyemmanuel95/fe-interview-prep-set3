@@ -1,0 +1,71 @@
+.expense-form {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.expense-form__heading {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.expense-form__field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.expense-form__input {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.expense-form__input[aria-invalid='true'] {
+  border: 2px solid var(--color-danger);
+}
+
+/* The icon plus the text means the error never relies on colour alone. */
+.expense-form__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.875rem;
+}
+
+.expense-form__error::before {
+  content: '⚠ ';
+}
+
+.expense-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.expense-form__button {
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.expense-form__button:hover {
+  background: var(--color-surface-alt);
+}
+
+.expense-form__button--primary,
+.expense-form__button--primary:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
