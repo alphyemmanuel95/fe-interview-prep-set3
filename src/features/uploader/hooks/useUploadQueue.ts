@@ -23,6 +23,7 @@ export function useUploadQueue(transport: UploadTransport): UploadQueueControls 
   // live in refs keyed by item id rather than in reducer state.
   const filesRef = useRef(new Map<string, File>());
   const controllersRef = useRef(new Map<string, AbortController>());
+  const retryTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   // An effect event: called by the scheduler effect, reads the latest transport without making
   // it a dependency that would re-run scheduling.
@@ -69,22 +70,45 @@ export function useUploadQueue(transport: UploadTransport): UploadQueueControls 
     }
   }, [items]);
 
-  // Requests outlive individual renders, so they are torn down once, on unmount.
+  // Backoff: each item entering "retrying" gets one timer that re-queues it after its delay.
+  useEffect(() => {
+    const retryTimers = retryTimersRef.current;
+    for (const item of items) {
+      if (item.status === 'retrying' && !retryTimers.has(item.id)) {
+        const timerId = setTimeout(() => {
+          retryTimers.delete(item.id);
+          dispatch({ type: 'retryDue', id: item.id });
+        }, item.retryDelayMs);
+        retryTimers.set(item.id, timerId);
+      }
+    }
+  }, [items]);
+
+  // Requests and backoff timers outlive individual renders, so they are torn down once, on
+  // unmount, instead of in the per-render effects above.
   useEffect(() => {
     const controllers = controllersRef.current;
+    const retryTimers = retryTimersRef.current;
     return () => {
       for (const controller of controllers.values()) {
         controller.abort();
       }
       controllers.clear();
+      for (const timerId of retryTimers.values()) {
+        clearTimeout(timerId);
+      }
+      retryTimers.clear();
     };
   }, []);
 
-  function abortAttempt(id: string): void {
+  // Stops whatever the item is doing right now: an in-flight request or a pending retry.
+  function stopItem(id: string): void {
     const controller = controllersRef.current.get(id);
     // Unregister first so the aborted attempt's outcome is recognised as stale.
     controllersRef.current.delete(id);
     controller?.abort();
+    clearTimeout(retryTimersRef.current.get(id));
+    retryTimersRef.current.delete(id);
   }
 
   function addFiles(files: readonly File[]): void {
@@ -97,7 +121,7 @@ export function useUploadQueue(transport: UploadTransport): UploadQueueControls 
   }
 
   function cancel(id: string): void {
-    abortAttempt(id);
+    stopItem(id);
     dispatch({ type: 'cancelled', id });
   }
 
@@ -106,7 +130,7 @@ export function useUploadQueue(transport: UploadTransport): UploadQueueControls 
   }
 
   function remove(id: string): void {
-    abortAttempt(id);
+    stopItem(id);
     filesRef.current.delete(id);
     dispatch({ type: 'removed', id });
   }
