@@ -20,19 +20,20 @@ export function MonthSummary({ month, totals }: MonthSummaryProps): JSX.Element 
       <h2 id={headingId} className="month-summary__heading">
         {monthLabel}
       </h2>
-      <p className="month-summary__total">
+      <p className="month-summary__scope">All categories, whatever the list is filtered to</p>
+      {/* A polite, atomic live region: after an add, edit or delete screen readers hear the
+          label with the new value ("Month total 132.79"), not a bare number. */}
+      <output
+        className="month-summary__total"
+        aria-labelledby={totalLabelId}
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <span id={totalLabelId} className="month-summary__total-label">
           Month total
-        </span>
-        {/* A polite live region, so screen readers hear the new total after an add, edit or delete. */}
-        <output
-          aria-labelledby={totalLabelId}
-          aria-live="polite"
-          className="month-summary__total-value"
-        >
-          {formatCents(totals.totalCents)}
-        </output>
-      </p>
+        </span>{' '}
+        <span className="month-summary__total-value">{formatCents(totals.totalCents)}</span>
+      </output>
       <table className="month-summary__table">
         <caption className="month-summary__caption">By category</caption>
         <thead className="visually-hidden">
