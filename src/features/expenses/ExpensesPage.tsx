@@ -1,4 +1,5 @@
 import { type JSX, useId, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   ALL_CATEGORIES,
   CATEGORIES,
@@ -20,6 +21,7 @@ export function ExpensesPage(): JSX.Element {
   const { month, category } = filters;
   const [editingId, setEditingId] = useState<string | null>(null);
   const listHeadingRef = useRef<HTMLHeadingElement>(null);
+  const editButtonsRef = useRef(new Map<string, HTMLButtonElement>());
   const filterId = useId();
 
   // Totals are derived from the expense list, never stored beside it: with a single source of
@@ -32,9 +34,14 @@ export function ExpensesPage(): JSX.Element {
   // and falls back to "add" by itself if that expense is deleted.
   const editingExpense = expenses.find((expense) => expense.id === editingId) ?? null;
 
-  function stopEditing(): void {
-    setEditingId(null);
-    listHeadingRef.current?.focus();
+  // flushSync commits the list first, so we can tell whether the row is still visible: a changed
+  // date or category may have moved it out of the current filters, and then the heading is next.
+  function stopEditing(id: string, applyChange?: () => void): void {
+    flushSync(() => {
+      applyChange?.();
+      setEditingId(null);
+    });
+    (editButtonsRef.current.get(id) ?? listHeadingRef.current)?.focus();
   }
 
   function handleSave(draft: ExpenseDraft): void {
@@ -42,8 +49,16 @@ export function ExpensesPage(): JSX.Element {
       addExpense(draft);
       return;
     }
-    updateExpense(editingExpense.id, draft);
-    stopEditing();
+    const { id } = editingExpense;
+    stopEditing(id, () => {
+      updateExpense(id, draft);
+    });
+  }
+
+  function handleCancel(): void {
+    if (editingId !== null) {
+      stopEditing(editingId);
+    }
   }
 
   function handleDelete(id: string): void {
@@ -101,7 +116,7 @@ export function ExpensesPage(): JSX.Element {
           key={editingExpense?.id ?? 'new'}
           expense={editingExpense}
           onSave={handleSave}
-          onCancel={stopEditing}
+          onCancel={handleCancel}
         />
         <MonthSummary month={month} totals={monthTotals} />
       </div>
@@ -110,6 +125,7 @@ export function ExpensesPage(): JSX.Element {
         expenses={visibleExpenses}
         editingId={editingId}
         headingRef={listHeadingRef}
+        editButtonsRef={editButtonsRef}
         onEdit={setEditingId}
         onDelete={handleDelete}
       />

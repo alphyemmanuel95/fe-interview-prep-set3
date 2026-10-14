@@ -64,6 +64,8 @@ describe('ExpensesPage', () => {
     expect(monthTotal()).toHaveTextContent('5.45');
     expect(breakdownRow('Food 5.25')).toBeInTheDocument();
     expect(breakdownRow('Travel 0.20')).toBeInTheDocument();
+    // Focus returns to the edited row rather than jumping to the top of the list.
+    expect(screen.getByRole('button', { name: 'Edit Lunch' })).toHaveFocus();
     expect(screen.getByRole('form', { name: 'Add expense' })).toBeInTheDocument();
   });
 

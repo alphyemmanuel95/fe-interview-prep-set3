@@ -8,6 +8,8 @@ export type ExpenseListProps = Readonly<{
   editingId: string | null;
   /** Lets the page return focus here after a row's buttons disappear (delete, save, cancel). */
   headingRef: RefObject<HTMLHeadingElement | null>;
+  /** Edit buttons by expense id, so focus can go back to a row after its edit finishes. */
+  editButtonsRef: RefObject<Map<string, HTMLButtonElement>>;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }>;
@@ -16,6 +18,7 @@ export function ExpenseList({
   expenses,
   editingId,
   headingRef,
+  editButtonsRef,
   onEdit,
   onDelete,
 }: ExpenseListProps): JSX.Element {
@@ -54,6 +57,16 @@ export function ExpenseList({
                     type="button"
                     className="expense-list__button"
                     aria-label={`Edit ${expense.title}`}
+                    ref={(node) => {
+                      // React 19 passes the node on mount and runs the returned cleanup on
+                      // unmount, so null never arrives here in practice; the check satisfies the type.
+                      if (node !== null) {
+                        editButtonsRef.current.set(expense.id, node);
+                      }
+                      return () => {
+                        editButtonsRef.current.delete(expense.id);
+                      };
+                    }}
                     onClick={() => {
                       onEdit(expense.id);
                     }}
