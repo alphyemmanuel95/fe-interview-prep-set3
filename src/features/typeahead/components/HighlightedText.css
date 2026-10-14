@@ -1,0 +1,11 @@
+/* Colour, weight and an underline together, so the match is not conveyed by colour alone. */
+.highlighted-text__match {
+  padding: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--color-primary);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}

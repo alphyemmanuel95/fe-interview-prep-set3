@@ -97,6 +97,7 @@ export function CityCombobox(): JSX.Element {
           id={listboxId}
           labelId={labelId}
           suggestions={suggestions}
+          query={normaliseQuery(debouncedQuery)}
           activeId={activeSuggestion?.id ?? null}
           isHidden={!isExpanded}
           onSelect={handleSelect}

@@ -1,12 +1,15 @@
 import type { JSX, MouseEvent } from 'react';
 import { toOptionId } from '../model/optionId';
 import type { CitySuggestion } from '../model/types';
+import { HighlightedText } from './HighlightedText';
 import './SuggestionList.css';
 
 type SuggestionListProps = Readonly<{
   id: string;
   labelId: string;
   suggestions: readonly CitySuggestion[];
+  /** The query the suggestions were fetched for, highlighted inside each option. */
+  query: string;
   activeId: number | null;
   isHidden: boolean;
   onSelect: (suggestion: CitySuggestion) => void;
@@ -16,6 +19,7 @@ export function SuggestionList({
   id,
   labelId,
   suggestions,
+  query,
   activeId,
   isHidden,
   onSelect,
@@ -43,8 +47,12 @@ export function SuggestionList({
             }
             onMouseDown={handleMouseDown}
           >
-            <span className="suggestions__name">{suggestion.name}</span>
-            <span className="suggestions__city">{suggestion.city}</span>
+            <span className="suggestions__name">
+              <HighlightedText text={suggestion.name} query={query} />
+            </span>
+            <span className="suggestions__city">
+              <HighlightedText text={suggestion.city} query={query} />
+            </span>
           </div>
         );
       })}
