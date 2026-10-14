@@ -9,6 +9,7 @@ import {
   FLAKY_FOLDER_ID,
   type SearchIndexEntry,
 } from './api/mockFileSystem';
+import { SEARCH_DEBOUNCE_MS } from './hooks/useTreeSearch';
 import { stubScrollIntoView } from './testUtils';
 
 // The generator is seeded, so this copy has exactly the ids the page serves.
@@ -78,6 +79,13 @@ function renderAt(url: string) {
 }
 
 const MAX_LEVEL = 6;
+
+/** Lets the debounced search query apply. */
+async function settleSearch(): Promise<void> {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+  });
+}
 
 /** Lets one round of simulated folder requests resolve. */
 async function finishLoads(): Promise<void> {
@@ -172,6 +180,7 @@ describe('FileTreePage', () => {
     const { user } = renderAt('/file-tree');
 
     await user.type(screen.getByRole('searchbox', { name: 'Search files' }), term);
+    await settleSearch();
     // Ancestor folders load level by level, as they would for a user.
     for (let level = 1; level < MAX_LEVEL; level += 1) {
       await finishLoads();
@@ -194,6 +203,7 @@ describe('FileTreePage', () => {
     const first = renderAt('/file-tree');
 
     await first.user.type(screen.getByRole('searchbox', { name: 'Search files' }), node.label);
+    await settleSearch();
     for (let level = 1; level < MAX_LEVEL; level += 1) {
       await finishLoads();
     }
@@ -219,6 +229,7 @@ describe('FileTreePage', () => {
     const { router, user } = renderAt('/file-tree');
 
     await user.type(screen.getByRole('searchbox', { name: 'Search files' }), pickSearchTerm());
+    await settleSearch();
     for (let level = 1; level < MAX_LEVEL; level += 1) {
       await finishLoads();
     }
@@ -238,10 +249,27 @@ describe('FileTreePage', () => {
     expect(screen.getAllByRole('treeitem')).toHaveLength(rowCountBefore);
   });
 
+  it('searches only after a pause and with at least two characters', async () => {
+    const { user } = renderAt('/file-tree');
+    const rootRowCount = screen.getAllByRole('treeitem').length;
+    const searchbox = screen.getByRole('searchbox', { name: 'Search files' });
+
+    await user.type(searchbox, 'a');
+    await settleSearch();
+    expect(screen.getByText('Type at least 2 characters to search.')).toBeInTheDocument();
+    expect(screen.getAllByRole('treeitem')).toHaveLength(rootRowCount);
+
+    await user.type(searchbox, 'pi');
+    expect(screen.queryByText(/\d+ matches/)).not.toBeInTheDocument();
+    await settleSearch();
+    expect(screen.getByText(/\d+ matches/)).toBeInTheDocument();
+  });
+
   it('says so when nothing matches the search', async () => {
     const { user } = renderAt('/file-tree');
 
     await user.type(screen.getByRole('searchbox', { name: 'Search files' }), 'no-such-file');
+    await settleSearch();
 
     expect(screen.getByText('No files or folders match “no-such-file”.')).toBeInTheDocument();
     expect(screen.queryAllByRole('treeitem')).toHaveLength(0);

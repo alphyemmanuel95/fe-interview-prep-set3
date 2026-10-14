@@ -31,6 +31,11 @@ describe('searchTree', () => {
     expect(searchTree(INDEX, 'zzz')?.matchIds.size).toBe(0);
     expect(searchTree(INDEX, '   ')).toBeNull();
   });
+
+  it('does not search single characters, which would open most of the tree', () => {
+    expect(searchTree(INDEX, 's')).toBeNull();
+    expect(searchTree(INDEX, 'sr')?.matchIds.size).toBe(1);
+  });
 });
 
 describe('splitByMatch', () => {

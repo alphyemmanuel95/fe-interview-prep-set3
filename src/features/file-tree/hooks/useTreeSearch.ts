@@ -1,11 +1,15 @@
 import { useMemo, useState } from 'react';
 import type { SearchIndexEntry } from '../api/mockFileSystem';
 import { searchTree, type TreeSearchResult } from '../model/search';
+import { useDebouncedValue } from './useDebouncedValue';
+
+// Each search can open many folders, and each opened folder is a request: wait for a pause.
+export const SEARCH_DEBOUNCE_MS = 250;
 
 export type TreeSearch = Readonly<{
   query: string;
   setQuery: (query: string) => void;
-  /** The query `result` was computed for. */
+  /** The debounced query `result` was computed for. */
   activeQuery: string;
   result: TreeSearchResult | null;
   /** What the tree should show as expanded: the URL's folders, plus the search's while searching. */
@@ -24,7 +28,7 @@ export function useTreeSearch(
   setUrlExpanded: (id: string, isExpanded: boolean) => void,
 ): TreeSearch {
   const [query, setQuery] = useState('');
-  const activeQuery = query;
+  const activeQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const result = useMemo(() => searchTree(index, activeQuery), [index, activeQuery]);
 
   // Folders the search opened can still be collapsed. That choice is local to the current query:

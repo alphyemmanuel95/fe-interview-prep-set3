@@ -10,7 +10,15 @@ export type TreeSearchResult = Readonly<{
 
 export type TextSegment = Readonly<{ start: number; text: string; isMatch: boolean }>;
 
+/** Shorter queries match most of the tree and would open (and load) nearly every folder. */
+export const MIN_QUERY_LENGTH = 2;
+
 const normalise = (text: string): string => text.trim().toLocaleLowerCase();
+
+export const isQueryTooShort = (query: string): boolean => {
+  const length = query.trim().length;
+  return length > 0 && length < MIN_QUERY_LENGTH;
+};
 
 // Searches the flat index instead of the loaded tree, so matches inside folders the user never
 // opened are still found; the tree then loads just the ancestor folders needed to show them.
@@ -19,7 +27,7 @@ export function searchTree(
   query: string,
 ): TreeSearchResult | null {
   const needle = normalise(query);
-  if (needle === '') {
+  if (needle.length < MIN_QUERY_LENGTH) {
     return null;
   }
   const matchIds = new Set<string>();

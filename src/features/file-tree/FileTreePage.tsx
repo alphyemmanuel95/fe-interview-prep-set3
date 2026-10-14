@@ -8,7 +8,7 @@ import {
 import { HighlightedText } from './components/HighlightedText';
 import { useTreeSearch } from './hooks/useTreeSearch';
 import { useTreeUrlState } from './hooks/useTreeUrlState';
-import type { TreeSearchResult } from './model/search';
+import { isQueryTooShort, MIN_QUERY_LENGTH, type TreeSearchResult } from './model/search';
 import { Tree } from './tree/Tree';
 import './FileTreePage.css';
 
@@ -32,6 +32,9 @@ function renderNodeIcon(node: FileNode, isExpanded: boolean): string {
 }
 
 function searchSummary(search: TreeSearchResult | null, query: string): string {
+  if (isQueryTooShort(query)) {
+    return `Type at least ${MIN_QUERY_LENGTH} characters to search.`;
+  }
   if (search === null) {
     return '';
   }
