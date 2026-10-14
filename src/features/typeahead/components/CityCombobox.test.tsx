@@ -182,6 +182,28 @@ describe('CityCombobox states', () => {
     expect(input).toHaveFocus();
   });
 
+  it('refetches a previously failed query when the user returns to it', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
+    const { user, input } = setup();
+
+    await user.type(input, 'del');
+    await finishTyping();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+
+    await user.type(input, 'h');
+    await finishTyping();
+    await user.type(input, '{Backspace}');
+    await finishTyping();
+
+    expect(fetchMock.mock.calls.map(([request]) => searchTermOf(request))).toEqual([
+      'del',
+      'delh',
+      'del',
+    ]);
+    expect(screen.getByRole('option', { name: 'Fidel Ortiz, Lima' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+
   it('shows an empty message quoting the query', async () => {
     const { user, input } = setup();
 

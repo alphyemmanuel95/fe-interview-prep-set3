@@ -43,6 +43,12 @@ export function useCitySearch(rawQuery: string): CitySearch {
   // Only successes are cached. The last failure is kept separately so Retry can clear it and
   // trigger a fresh request instead of replaying a cached error.
   const [failure, setFailure] = useState<SearchFailure | null>(null);
+  // A failure belongs to the query that produced it. Drop it as soon as the query moves on, so
+  // returning to that query refetches instead of replaying a stale error. Adjusting state during
+  // render (rather than in an effect) avoids rendering the stale error even once.
+  if (failure !== null && failure.query !== query) {
+    setFailure(null);
+  }
   const isCached = cache.has(query);
   const hasFailed = failure?.query === query;
 
