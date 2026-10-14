@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import type { SubmissionState } from '../model/bookingReducer';
-import { findEvent, getSeatPriceCents, getSeatTier, SEAT_TIERS } from '../model/catalog';
+import { getEventName, getSeatPriceCents, getSeatTier, SEAT_TIERS } from '../model/catalog';
 import { formatIsoDate } from '../model/localDate';
 import { formatPrice } from '../model/pricing';
 import type { BookingStep } from '../model/steps';
@@ -16,7 +16,6 @@ type ReviewStepProps = Readonly<{
 }>;
 
 export function ReviewStep({ draft, submission, onEditStep }: ReviewStepProps): JSX.Element {
-  const eventName = draft.eventId === null ? undefined : findEvent(draft.eventId)?.name;
   const isSubmitting = submission.status === 'submitting';
 
   return (
@@ -32,7 +31,7 @@ export function ReviewStep({ draft, submission, onEditStep }: ReviewStepProps): 
       >
         <dl className="review-step__details">
           <dt>Event</dt>
-          <dd>{eventName}</dd>
+          <dd>{getEventName(draft.eventId)}</dd>
           <dt>Date</dt>
           <dd>{formatIsoDate(draft.date)}</dd>
         </dl>

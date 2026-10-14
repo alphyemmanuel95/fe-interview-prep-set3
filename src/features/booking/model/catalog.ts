@@ -87,3 +87,10 @@ export function isEventId(value: string): value is EventId {
 export function findEvent(eventId: EventId): BookingEvent | undefined {
   return EVENTS.find((event) => event.id === eventId);
 }
+
+const UNKNOWN_EVENT_NAME = 'Unknown event';
+
+/** Display name with a visible fallback, so a missing event never renders as a blank value. */
+export function getEventName(eventId: EventId | null): string {
+  return (eventId === null ? undefined : findEvent(eventId)?.name) ?? UNKNOWN_EVENT_NAME;
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { JSX } from 'react';
-import { findEvent } from '../model/catalog';
+import { getEventName } from '../model/catalog';
 import { formatIsoDate } from '../model/localDate';
 import { formatPrice } from '../model/pricing';
 import type { BookingConfirmation as Confirmation } from '../model/types';
@@ -38,7 +38,7 @@ export function BookingConfirmation({
       </p>
       <dl className="booking-confirmation__details">
         <dt>Event</dt>
-        <dd>{findEvent(booking.eventId)?.name}</dd>
+        <dd>{getEventName(booking.eventId)}</dd>
         <dt>Date</dt>
         <dd>{formatIsoDate(booking.date)}</dd>
         <dt>Seats</dt>
