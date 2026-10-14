@@ -36,6 +36,12 @@ function queryErrorSummary(): HTMLElement | null {
   return screen.queryByRole('region', { name: ERROR_SUMMARY_NAME });
 }
 
+/** The live count and total inside the seat step (the page has other status regions). */
+function getSeatSummary(): HTMLElement {
+  const seatStep = screen.getByRole('group', { name: /Choose 1 to 6 seats/ });
+  return within(seatStep).getByRole('status');
+}
+
 function getSeat(seatId: string): HTMLElement {
   return screen.getByRole('button', { name: new RegExp(`^Seat ${seatId},`) });
 }
@@ -139,7 +145,7 @@ describe('BookingPage', () => {
     const { user } = setup();
     await completeEventStep(user);
     await selectSeats(user, ['A1', 'C1']);
-    expect(screen.getByRole('status')).toHaveTextContent('Total ₹750.00');
+    expect(getSeatSummary()).toHaveTextContent('Total ₹750.00');
     await clickNext(user);
     await user.type(screen.getByLabelText(/seat A1/), 'Asha');
     await user.type(screen.getByLabelText(/seat C1/), 'Chen');
@@ -147,9 +153,9 @@ describe('BookingPage', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }));
     await user.click(getSeat('A1'));
     await user.click(getSeat('B1'));
-    expect(screen.getByRole('status')).toHaveTextContent('Total ₹750.00');
+    expect(getSeatSummary()).toHaveTextContent('Total ₹750.00');
     await user.click(getSeat('D2'));
-    expect(screen.getByRole('status')).toHaveTextContent('Total ₹1,000.00');
+    expect(getSeatSummary()).toHaveTextContent('Total ₹1,000.00');
     await clickNext(user);
 
     expect(screen.queryByLabelText(/seat A1/)).not.toBeInTheDocument();
@@ -189,6 +195,8 @@ describe('BookingPage', () => {
     await act(() => vi.advanceTimersByTimeAsync(SIMULATED_LATENCY_MS));
 
     expect(screen.getByRole('heading', { name: /Booking confirmed/ })).toHaveFocus();
+    const announcement = screen.getByText(/^Booking confirmed\. Your reference is [0-9A-F]{8}\.$/);
+    expect(announcement).toHaveAttribute('role', 'status');
     expect(screen.getByText('A1, B3, C1')).toBeInTheDocument();
     expect(screen.getByText('₹1,250.00')).toBeInTheDocument();
   });

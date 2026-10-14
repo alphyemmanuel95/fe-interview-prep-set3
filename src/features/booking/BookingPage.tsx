@@ -62,6 +62,13 @@ export function BookingPage(): JSX.Element {
         Book an event
       </h1>
       <BookingProgress currentStep={draft.step} isComplete={submission.status === 'success'} />
+      {/* Always mounted, so screen readers are already watching it when the reference arrives;
+          a live region rendered together with its content is often not announced. */}
+      <p className="visually-hidden" role="status">
+        {submission.status === 'success'
+          ? `Booking confirmed. Your reference is ${submission.confirmation.reference}.`
+          : ''}
+      </p>
       {submission.status === 'success' ? (
         <BookingConfirmation
           confirmation={submission.confirmation}
