@@ -3,6 +3,7 @@ import { assertNever } from '../../../shared/assertNever';
 import { formatFileSize } from '../model/format';
 import type { UploadItem } from '../model/uploadQueue';
 import { canRetry, isActive } from '../model/uploadQueue';
+import { useActionSwapGuard } from '../hooks/useActionSwapGuard';
 import { RetryStatus } from './RetryStatus';
 import './UploadRow.css';
 
@@ -45,16 +46,48 @@ function getProgress(item: UploadItem): number {
   return item.status === 'done' ? 1 : 0;
 }
 
+type RowAction = 'cancel' | 'retry' | 'remove';
+
+const ACTION_LABELS = {
+  cancel: 'Cancel',
+  retry: 'Retry',
+  remove: 'Remove',
+} as const satisfies Record<RowAction, string>;
+
+function getPrimaryAction(item: UploadItem): RowAction {
+  if (isActive(item)) {
+    return 'cancel';
+  }
+  return canRetry(item) ? 'retry' : 'remove';
+}
+
 export function UploadRow({ item, onCancel, onRetry, onRemove }: UploadRowProps): JSX.Element {
-  const isCancellable = isActive(item);
-  const isRetryable = canRetry(item);
-  const primaryLabel = isCancellable ? 'Cancel' : 'Retry';
+  const primaryAction = getPrimaryAction(item);
+  const hasSecondaryRemove = primaryAction === 'retry';
+  const isSwapGuardActive = useActionSwapGuard(primaryAction);
 
   function handlePrimaryAction(): void {
-    if (isCancellable) {
-      onCancel(item.id);
-    } else {
-      onRetry(item.id);
+    if (isSwapGuardActive()) {
+      return;
+    }
+    switch (primaryAction) {
+      case 'cancel':
+        onCancel(item.id);
+        return;
+      case 'retry':
+        onRetry(item.id);
+        return;
+      case 'remove':
+        onRemove(item.id);
+        return;
+      default:
+        assertNever(primaryAction);
+    }
+  }
+
+  function handleSecondaryRemove(): void {
+    if (!isSwapGuardActive()) {
+      onRemove(item.id);
     }
   }
 
@@ -73,25 +106,26 @@ export function UploadRow({ item, onCancel, onRetry, onRemove }: UploadRowProps)
       <div className="upload-row__footer">
         <p className="upload-row__status">{describeStatus(item)}</p>
         <div className="upload-row__actions">
-          {/* Cancel and Retry share one button element, so focus stays put when it toggles. */}
-          {(isCancellable || isRetryable) && (
-            <button
-              type="button"
-              className="upload-row__button"
-              aria-label={`${primaryLabel} ${item.name}`}
-              onClick={handlePrimaryAction}
-            >
-              {primaryLabel}
-            </button>
-          )}
-          {!isCancellable && (
+          {/* Every status has a primary action in this one, always-rendered button, so focus is
+              never dropped when the status changes (including on its own, e.g. on completion). */}
+          <button
+            type="button"
+            className={
+              primaryAction === 'remove'
+                ? 'upload-row__button upload-row__button--secondary'
+                : 'upload-row__button'
+            }
+            aria-label={`${ACTION_LABELS[primaryAction]} ${item.name}`}
+            onClick={handlePrimaryAction}
+          >
+            {ACTION_LABELS[primaryAction]}
+          </button>
+          {hasSecondaryRemove && (
             <button
               type="button"
               className="upload-row__button upload-row__button--secondary"
               aria-label={`Remove ${item.name}`}
-              onClick={() => {
-                onRemove(item.id);
-              }}
+              onClick={handleSecondaryRemove}
             >
               Remove
             </button>

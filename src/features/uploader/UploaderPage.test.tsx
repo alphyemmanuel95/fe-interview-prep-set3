@@ -3,6 +3,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { UploadOutcome, UploadRequest, UploadTransport } from './api/uploadTransport';
+import { ACTION_SWAP_GUARD_MS } from './hooks/useActionSwapGuard';
 import { saveQueue } from './model/persistence';
 import { MAX_ATTEMPTS, MAX_CONCURRENT_UPLOADS, RETRY_DELAYS_MS } from './model/uploadQueue';
 import { UploaderPage } from './UploaderPage';
@@ -186,7 +187,33 @@ describe('UploaderPage', () => {
     expect(getInFlight()).toBe(3);
     expect(screen.getByText('Cancelled')).toBeInTheDocument();
     // Cancel turned into Retry on the same element, so keyboard focus is kept.
-    expect(screen.getByRole('button', { name: 'Retry file-1.txt' })).toHaveFocus();
+    const retryButton = screen.getByRole('button', { name: 'Retry file-1.txt' });
+    expect(retryButton).toHaveFocus();
+
+    // The second half of a double-click lands on Retry right after the swap and is ignored.
+    await user.click(retryButton);
+    expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    expect(uploads).toHaveLength(4);
+  });
+
+  it('keeps focus in the row when an upload finishes on its own', async () => {
+    const user = userEvent.setup();
+    const { transport, uploads } = createControllableTransport();
+    render(<UploaderPage transport={transport} />);
+    await user.upload(screen.getByLabelText('Choose files'), createFiles(1));
+    await waitFor(() => {
+      expect(uploads).toHaveLength(1);
+    });
+    screen.getByRole('button', { name: 'Cancel file-1.txt' }).focus();
+
+    act(() => {
+      uploads[0]?.settle({
+        kind: 'success',
+        file: { id: 'f1', name: 'file-1.txt', size: 1, duplicate: false },
+      });
+    });
+
+    expect(await screen.findByRole('button', { name: 'Remove file-1.txt' })).toHaveFocus();
   });
 
   it('retries after 1s, 2s and 4s, then fails until retried manually', async () => {
@@ -235,6 +262,7 @@ describe('UploaderPage', () => {
       await advanceTime(delayMs);
     }
     expect(screen.getAllByText(/^Failed after/)).toHaveLength(2);
+    await advanceTime(ACTION_SWAP_GUARD_MS);
     await user.click(screen.getByRole('button', { name: 'Retry file-1.txt' }));
     await advanceTime(0);
 
