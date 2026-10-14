@@ -11,8 +11,9 @@ export function FieldErrorMessage({ field, message }: FieldErrorMessageProps): J
   }
   return (
     <p id={getErrorId(field)} className="field-error">
-      <span className="visually-hidden">Error: </span>
-      {message}
+      {/* The space sits outside the span: whitespace inside a visually hidden span can be
+          dropped from the accessible name, which would read "Error:Choose…". */}
+      <span className="visually-hidden">Error:</span> {message}
     </p>
   );
 }

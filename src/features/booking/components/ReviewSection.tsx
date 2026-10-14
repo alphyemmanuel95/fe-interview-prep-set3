@@ -32,7 +32,7 @@ export function ReviewSection({
           disabled={isEditDisabled}
           onClick={onEdit}
         >
-          Edit<span className="visually-hidden"> {editLabel}</span>
+          Edit <span className="visually-hidden">{editLabel}</span>
         </button>
       </div>
       {children}
