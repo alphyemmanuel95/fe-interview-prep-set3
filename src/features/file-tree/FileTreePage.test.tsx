@@ -138,6 +138,26 @@ describe('FileTreePage', () => {
     expect(firstFolder).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('keeps focus in the tree when browser Back hides the focused row', async () => {
+    const { router, user } = renderAt('/file-tree');
+    const [firstFolder] = screen.getAllByRole('treeitem');
+    if (firstFolder === undefined) {
+      throw new Error('The tree rendered no rows');
+    }
+
+    await user.click(firstFolder);
+    await user.keyboard('{ArrowRight}');
+    await finishLoads();
+    await user.keyboard('{ArrowRight}');
+    expect(firstFolder).not.toHaveFocus();
+
+    // Back collapses the folder, removing the focused child row from the DOM.
+    await act(() => router.navigate(-1));
+
+    expect(firstFolder).toHaveAttribute('aria-expanded', 'false');
+    expect(firstFolder).toHaveFocus();
+  });
+
   it('filters by search while keeping each match’s ancestor folders visible', async () => {
     const term = pickSearchTerm();
     const matches = matchesOf(term);

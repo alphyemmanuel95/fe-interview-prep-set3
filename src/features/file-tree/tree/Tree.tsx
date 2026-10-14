@@ -1,10 +1,6 @@
 import {
-  useCallback,
   useEffect,
   useMemo,
-  useRef,
-  useState,
-  type FocusEvent,
   type JSX,
   type KeyboardEvent,
   type MouseEvent,
@@ -15,7 +11,8 @@ import { isToggleTarget, rowIdOf } from './treeDom';
 import { getTreeKeyAction, type TreeKeyAction } from './treeNavigation';
 import { TreeErrorRow, TreeItemRow } from './TreeRow';
 import { useChildrenLoader, type LoadChildren } from './useChildrenLoader';
-import { ancestorIdsOf, flattenVisibleRows, loadStatusMessage, pickTabStop } from './visibleRows';
+import { useRovingFocus } from './useRovingFocus';
+import { ancestorIdsOf, flattenVisibleRows, loadStatusMessage } from './visibleRows';
 import './Tree.css';
 
 // Generic over the item type: nothing here knows about files. Callers describe their data through
@@ -42,8 +39,6 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
   const { rootItems, getId, getLabel, isBranch, expandedIds, selectedId, visibleIds } = props;
   const { onExpandedChange, onSelect } = props;
   const { childrenById, load } = useChildrenLoader(props.loadChildren, getId);
-  const [focusedId, setFocusedId] = useState<string | null>(null);
-  const rowElements = useRef(new Map<string, HTMLElement>());
 
   const rows = useMemo(
     () =>
@@ -58,8 +53,11 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
   );
   const indexById = useMemo(() => new Map(rows.map((row, index) => [row.id, index])), [rows]);
   const rowById = (id: string) => rows[indexById.get(id) ?? -1];
-  const tabStopId = pickTabStop(rows, indexById, [focusedId, selectedId]);
-  const isSelectedRendered = selectedId !== null && indexById.has(selectedId);
+  const { tabStopId, registerRow, focusRow, handleFocus, handleBlur } = useRovingFocus(
+    rows,
+    indexById,
+    selectedId,
+  );
 
   // The single place children are requested. Expanding by click, key, shared link or browser
   // back/forward all just change `expandedIds`; any expanded branch never requested gets loaded.
@@ -72,24 +70,11 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
     }
   }, [rows, load]);
 
-  // Reveal the selected row once it renders, e.g. after a shared link's folders have loaded.
-  useEffect(() => {
-    if (selectedId !== null && isSelectedRendered) {
-      rowElements.current.get(selectedId)?.scrollIntoView({ block: 'nearest' });
-    }
-  }, [selectedId, isSelectedRendered]);
-
-  const registerRow = useCallback((id: string, element: HTMLElement | null) => {
-    if (element === null) {
-      rowElements.current.delete(id);
-    } else {
-      rowElements.current.set(id, element);
-    }
-  }, []);
-
   const activate = (id: string): void => {
     const row = rowById(id);
     if (row?.kind === 'error') {
+      // Retrying replaces this row; move focus to the folder first so it is not dropped on <body>.
+      focusRow(row.parentId);
       load(row.parent);
     } else if (row !== undefined) {
       onSelect(id, ancestorIdsOf(rows, indexById, id));
@@ -99,8 +84,7 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
   const runAction = (action: TreeKeyAction): void => {
     switch (action.type) {
       case 'focus':
-        // DOM focus fires `handleFocus`, which moves the tab stop.
-        rowElements.current.get(action.id)?.focus();
+        focusRow(action.id);
         return;
       case 'expand':
       case 'collapse':
@@ -140,13 +124,6 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
     }
   };
 
-  const handleFocus = (event: FocusEvent<HTMLDivElement>): void => {
-    const id = rowIdOf(event.target);
-    if (id !== undefined) {
-      setFocusedId(id);
-    }
-  };
-
   return (
     <div className="tree">
       <div
@@ -157,6 +134,7 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
         onKeyDown={handleKeyDown}
         onClick={handleClick}
         onFocus={handleFocus}
+        onBlur={handleBlur}
       >
         {rows.map((row) =>
           row.kind === 'item' ? (

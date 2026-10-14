@@ -159,6 +159,8 @@ describe('Tree', () => {
     await user.keyboard('{ArrowDown}');
     expect(errorRow).toHaveFocus();
     await user.keyboard('{Enter}');
+    // The error row is replaced, so focus moves to the folder being retried.
+    expect(screen.getByRole('treeitem', { name: 'Board' })).toHaveFocus();
 
     expect(await screen.findByRole('treeitem', { name: 'Barbara' })).toBeInTheDocument();
     expect(loadReports).toHaveBeenCalledTimes(2);
