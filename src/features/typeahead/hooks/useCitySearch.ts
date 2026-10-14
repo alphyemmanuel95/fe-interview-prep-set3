@@ -60,6 +60,11 @@ export function useCitySearch(rawQuery: string): CitySearch {
     const controller = new AbortController();
     void fetchCitySuggestions(query, controller.signal).then(
       (suggestions) => {
+        // The body can finish parsing just after the abort. Drop it so nothing is set after
+        // unmount; a later visit to this query simply refetches.
+        if (controller.signal.aborted) {
+          return;
+        }
         setCache((previous) => new Map(previous).set(query, suggestions));
       },
       (error: unknown) => {
