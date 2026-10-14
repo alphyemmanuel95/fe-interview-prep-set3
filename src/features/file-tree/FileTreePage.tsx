@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type JSX } from 'react';
+import { useCallback, type JSX } from 'react';
 import {
   createMockFileSystem,
   DEFAULT_LATENCY_MS,
@@ -6,8 +6,9 @@ import {
   type FileNode,
 } from './api/mockFileSystem';
 import { HighlightedText } from './components/HighlightedText';
+import { useTreeSearch } from './hooks/useTreeSearch';
 import { useTreeUrlState } from './hooks/useTreeUrlState';
-import { searchTree, type TreeSearchResult } from './model/search';
+import type { TreeSearchResult } from './model/search';
 import { Tree } from './tree/Tree';
 import './FileTreePage.css';
 
@@ -41,22 +42,16 @@ function searchSummary(search: TreeSearchResult | null, query: string): string {
 }
 
 export function FileTreePage(): JSX.Element {
-  const { expandedIds, selectedId, setExpanded, select } = useTreeUrlState();
-  // Search text is transient, local view state: only expanded + selected make up the shared link.
-  const [query, setQuery] = useState('');
-  const search = useMemo(() => searchTree(fileSystem.searchIndex, query), [query]);
-
-  // While searching, ancestors of matches are opened on top of the user's own expanded folders.
-  // This is derived, never written to the URL, so clearing the search restores the previous view.
-  const treeExpandedIds = useMemo(
-    () => (search === null ? expandedIds : new Set([...expandedIds, ...search.expandedIds])),
-    [expandedIds, search],
-  );
+  const url = useTreeUrlState();
+  // While searching, ancestors of matches are opened on top of the URL's folders. That is derived
+  // and never written to the URL, so clearing the search restores the previous view.
+  const search = useTreeSearch(fileSystem.searchIndex, url.expandedIds, url.setExpanded);
+  const { activeQuery, result } = search;
 
   // Stable per query so memoised rows re-render for a new query, not for every expand or select.
   const renderLabel = useCallback(
-    (node: FileNode) => <HighlightedText text={node.name} query={query} />,
-    [query],
+    (node: FileNode) => <HighlightedText text={node.name} query={activeQuery} />,
+    [activeQuery],
   );
 
   return (
@@ -74,15 +69,15 @@ export function FileTreePage(): JSX.Element {
           id="file-tree-search"
           className="file-tree__search-input"
           type="search"
-          value={query}
+          value={search.query}
           onChange={(event) => {
-            setQuery(event.target.value);
+            search.setQuery(event.target.value);
           }}
           autoComplete="off"
           spellCheck={false}
         />
         <p className="file-tree__search-status" aria-live="polite">
-          {searchSummary(search, query)}
+          {searchSummary(result, activeQuery)}
         </p>
       </div>
       <div className="file-tree__panel">
@@ -93,17 +88,17 @@ export function FileTreePage(): JSX.Element {
           getLabel={getNodeName}
           isBranch={isFolder}
           loadChildren={loadFolder}
-          expandedIds={treeExpandedIds}
-          selectedId={selectedId}
-          onExpandedChange={setExpanded}
-          onSelect={select}
-          filter={search ?? undefined}
+          expandedIds={search.expandedIds}
+          selectedId={url.selectedId}
+          onExpandedChange={search.setExpanded}
+          onSelect={url.select}
+          filter={result ?? undefined}
           renderIcon={renderNodeIcon}
           renderLabel={renderLabel}
         />
       </div>
       <p className="file-tree__selection">
-        Selected: <code>{selectedId ?? 'nothing yet'}</code>
+        Selected: <code>{url.selectedId ?? 'nothing yet'}</code>
       </p>
     </section>
   );

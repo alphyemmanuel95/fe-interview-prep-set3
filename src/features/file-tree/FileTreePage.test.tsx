@@ -215,6 +215,29 @@ describe('FileTreePage', () => {
     expect(selected).toHaveAttribute('aria-level', String(node.ancestorIds.length + 1));
   });
 
+  it('collapses a search-opened folder without touching the URL', async () => {
+    const { router, user } = renderAt('/file-tree');
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search files' }), pickSearchTerm());
+    for (let level = 1; level < MAX_LEVEL; level += 1) {
+      await finishLoads();
+    }
+    const urlBefore = router.state.location.search;
+    const rowCountBefore = screen.getAllByRole('treeitem').length;
+    await user.tab();
+    const [firstAncestor] = screen.getAllByRole('treeitem');
+    expect(firstAncestor).toHaveFocus();
+
+    await user.keyboard('{ArrowLeft}');
+    expect(firstAncestor).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getAllByRole('treeitem').length).toBeLessThan(rowCountBefore);
+    expect(router.state.location.search).toBe(urlBefore);
+
+    await user.keyboard('{ArrowRight}');
+    expect(firstAncestor).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getAllByRole('treeitem')).toHaveLength(rowCountBefore);
+  });
+
   it('says so when nothing matches the search', async () => {
     const { user } = renderAt('/file-tree');
 
