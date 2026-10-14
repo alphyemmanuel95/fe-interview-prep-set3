@@ -65,7 +65,7 @@
   display: grid;
   grid-template-columns:
     1.5rem repeat(4, minmax(0, var(--seat-size)))
-    var(--space-3) repeat(4, minmax(0, var(--seat-size)));
+    var(--space-3) [after-aisle] repeat(4, minmax(0, var(--seat-size)));
   gap: var(--space-1);
   align-items: center;
 }
@@ -75,8 +75,8 @@
   text-align: center;
 }
 
-.seat-grid__row .seat-grid__seat:nth-of-type(5) {
-  grid-column-start: 7;
+.seat-grid__seat--after-aisle {
+  grid-column-start: after-aisle;
 }
 
 .seat-grid__seat {

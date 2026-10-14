@@ -20,6 +20,9 @@ type SeatGridProps = Readonly<{
   onSeatToggle: (seatId: SeatId) => void;
 }>;
 
+/** The aisle splits each row into two blocks of four. */
+const LAST_SEAT_BEFORE_AISLE: SeatNumber = 4;
+
 type SeatStatus = 'available' | 'selected' | 'booked';
 
 function getSeatStatus(seatId: SeatId, selectedSeatIds: readonly SeatId[]): SeatStatus {
@@ -43,6 +46,13 @@ function getSeatLabel(seatId: SeatId, status: SeatStatus, isAtLimit: boolean): s
   return label;
 }
 
+function getSeatClassName(seatId: SeatId, seatNumber: SeatNumber, status: SeatStatus): string {
+  const className = `seat-grid__seat seat-grid__seat--${status} seat-grid__seat--${getSeatTier(seatId)}`;
+  return seatNumber === LAST_SEAT_BEFORE_AISLE + 1
+    ? `${className} seat-grid__seat--after-aisle`
+    : className;
+}
+
 function getRowLabel(row: SeatRow): string {
   return `Row ${row}, ${SEAT_TIERS[getSeatTier(toSeatId(row, 1))].label}`;
 }
@@ -55,7 +65,7 @@ export function SeatGrid({ selectedSeatIds, isAtLimit, onSeatToggle }: SeatGridP
       <button
         key={seatId}
         type="button"
-        className={`seat-grid__seat seat-grid__seat--${status} seat-grid__seat--${getSeatTier(seatId)}`}
+        className={getSeatClassName(seatId, seatNumber, status)}
         aria-label={getSeatLabel(seatId, status, isAtLimit)}
         aria-pressed={status === 'selected'}
         disabled={status === 'booked' || (status === 'available' && isAtLimit)}
