@@ -1,0 +1,47 @@
+.suggestions {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + var(--space-1));
+  z-index: 1;
+  max-height: 20rem;
+  margin: 0;
+  padding: var(--space-1) 0;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px rgb(27 31 39 / 12%);
+}
+
+.suggestions--stale {
+  opacity: 0.6;
+}
+
+.suggestions__option {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+}
+
+/* Lighter than the active row and without its border, so hover never reads as a second active option. */
+.suggestions__option:hover {
+  background: var(--color-bg);
+}
+
+/* Active state is conveyed by a border as well as the background, not by colour alone. */
+.suggestions__option--active {
+  border-left-color: var(--color-primary);
+  background: var(--color-surface-alt);
+}
+
+.suggestions__name {
+  font-weight: 600;
+}
+
+.suggestions__city {
+  color: var(--color-text-muted);
+}
