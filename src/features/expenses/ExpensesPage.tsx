@@ -1,14 +1,34 @@
-import { type JSX, useRef, useState } from 'react';
-import type { ExpenseDraft } from './expenses';
+import { type JSX, useId, useMemo, useRef, useState } from 'react';
+import {
+  ALL_CATEGORIES,
+  CATEGORIES,
+  type ExpenseDraft,
+  selectMonthTotals,
+  selectVisibleExpenses,
+} from './expenses';
 import { ExpenseForm } from './ExpenseForm';
 import { ExpenseList } from './ExpenseList';
+import { MonthSummary } from './MonthSummary';
+import { useExpenseFilters } from './useExpenseFilters';
 import { useExpenses } from './useExpenses';
 import './ExpensesPage.css';
 
 export function ExpensesPage(): JSX.Element {
   const { expenses, addExpense, updateExpense, deleteExpense } = useExpenses();
+  const { filters, setMonth, setCategory } = useExpenseFilters();
+  const { month, category } = filters;
   const [editingId, setEditingId] = useState<string | null>(null);
   const listHeadingRef = useRef<HTMLHeadingElement>(null);
+  const filterId = useId();
+
+  // Totals are derived from the expense list, never stored beside it: with a single source of
+  // truth, an add, edit or delete cannot leave a stale total behind. useMemo only skips the
+  // recomputation on renders that change neither input, such as starting an edit.
+  const monthTotals = useMemo(() => selectMonthTotals(expenses, month), [expenses, month]);
+  const visibleExpenses = useMemo(
+    () => selectVisibleExpenses(expenses, { month, category }),
+    [expenses, month, category],
+  );
 
   // Only the id is stored, so the form always edits the current version of the expense
   // and falls back to "add" by itself if that expense is deleted.
@@ -41,14 +61,53 @@ export function ExpensesPage(): JSX.Element {
       <h1 id="expenses-title" className="expenses-page__title">
         Expense Tracker
       </h1>
-      <ExpenseForm
-        key={editingExpense?.id ?? 'new'}
-        expense={editingExpense}
-        onSave={handleSave}
-        onCancel={stopEditing}
-      />
+
+      <fieldset className="expenses-page__filters">
+        <legend className="expenses-page__legend">Filters</legend>
+        <div className="expenses-page__filter">
+          <label htmlFor={`${filterId}-month`}>Month</label>
+          <input
+            id={`${filterId}-month`}
+            className="expenses-page__control"
+            type="month"
+            value={month}
+            onChange={(event) => {
+              setMonth(event.target.value);
+            }}
+          />
+        </div>
+        <div className="expenses-page__filter">
+          <label htmlFor={`${filterId}-category`}>Category</label>
+          <select
+            id={`${filterId}-category`}
+            className="expenses-page__control"
+            value={category}
+            onChange={(event) => {
+              setCategory(event.target.value);
+            }}
+          >
+            <option value={ALL_CATEGORIES}>All categories</option>
+            {CATEGORIES.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+      </fieldset>
+
+      <div className="expenses-page__grid">
+        <ExpenseForm
+          key={editingExpense?.id ?? 'new'}
+          expense={editingExpense}
+          onSave={handleSave}
+          onCancel={stopEditing}
+        />
+        <MonthSummary month={month} totals={monthTotals} />
+      </div>
+
       <ExpenseList
-        expenses={expenses}
+        expenses={visibleExpenses}
         editingId={editingId}
         headingRef={listHeadingRef}
         onEdit={setEditingId}

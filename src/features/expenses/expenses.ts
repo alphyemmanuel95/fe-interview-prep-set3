@@ -55,6 +55,9 @@ const MONTH_KEY_LENGTH = 'YYYY-MM'.length;
 export const isCategory = (value: unknown): value is Category =>
   CATEGORIES.some((category) => category === value);
 
+export const isCategoryFilter = (value: unknown): value is CategoryFilter =>
+  value === ALL_CATEGORIES || isCategory(value);
+
 export const isMonthKey = (value: unknown): value is MonthKey =>
   typeof value === 'string' && MONTH_PATTERN.test(value);
 
@@ -99,6 +102,15 @@ export const toIsoDate = (date: Date): string => `${toMonthKey(date)}-${pad2(dat
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' });
 
 export const formatIsoDate = (isoDate: string): string => dateFormatter.format(new Date(isoDate));
+
+const monthFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+export const formatMonth = (month: MonthKey): string =>
+  monthFormatter.format(new Date(`${month}-01`));
 
 // ---- Validation ----
 
