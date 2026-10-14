@@ -1,6 +1,17 @@
 .seat-grid {
   --seat-size: 2.75rem;
   --seat-vip: var(--color-warning);
+  --seat-row-label-width: 1.5rem;
+  --seat-swatch-size: 1.5rem;
+  --seat-border-width: 2px;
+  --seat-vip-border-width: 3px;
+  --seat-mark-size: 0.625rem;
+  --seat-check-size: 1rem;
+  --seat-check-offset-top: -0.45rem;
+  --seat-check-offset-right: -0.35rem;
+  --seat-stripe-width: 4px;
+  --seat-stripe-gap: 2px;
+  --seat-unavailable-opacity: 0.45;
 
   display: grid;
   gap: var(--space-4);
@@ -37,8 +48,8 @@
 }
 
 .seat-grid__legend-item .seat-grid__seat {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: var(--seat-swatch-size);
+  height: var(--seat-swatch-size);
 }
 
 .seat-grid__stage {
@@ -64,7 +75,7 @@
 .seat-grid__row {
   display: grid;
   grid-template-columns:
-    1.5rem repeat(4, minmax(0, var(--seat-size)))
+    var(--seat-row-label-width) repeat(4, minmax(0, var(--seat-size)))
     var(--space-3) [after-aisle] repeat(4, minmax(0, var(--seat-size)));
   gap: var(--space-1);
   align-items: center;
@@ -87,8 +98,9 @@
   min-width: 0;
   aspect-ratio: 1;
   padding: 0;
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius) var(--radius) 0.2rem 0.2rem;
+  border: var(--seat-border-width) solid var(--color-border);
+  /* Rounded back, flatter front: reads as a seat facing the stage. */
+  border-radius: var(--radius) var(--radius) calc(var(--radius) / 2) calc(var(--radius) / 2);
   background: var(--color-surface);
   color: var(--color-text);
   font-size: 0.875rem;
@@ -103,16 +115,16 @@ button.seat-grid__seat {
    row label and the seat's accessible name. */
 .seat-grid__seat--vip {
   border-color: var(--seat-vip);
-  border-width: 3px;
+  border-width: var(--seat-vip-border-width);
 }
 
 .seat-grid__seat--vip::before {
   content: '★' / '';
   position: absolute;
   top: 0;
-  left: 0.15rem;
+  left: var(--space-1);
   color: var(--seat-vip);
-  font-size: 0.625rem;
+  font-size: var(--seat-mark-size);
   line-height: 1;
 }
 
@@ -134,16 +146,16 @@ button.seat-grid__seat {
 .seat-grid__seat--selected::after {
   content: '✓' / '';
   position: absolute;
-  top: -0.45rem;
-  right: -0.35rem;
+  top: var(--seat-check-offset-top);
+  right: var(--seat-check-offset-right);
   display: grid;
   place-items: center;
-  width: 1rem;
-  height: 1rem;
+  width: var(--seat-check-size);
+  height: var(--seat-check-size);
   border-radius: 50%;
   background: var(--color-success);
   color: var(--color-on-primary);
-  font-size: 0.625rem;
+  font-size: var(--seat-mark-size);
 }
 
 .seat-grid__seat--booked {
@@ -151,9 +163,9 @@ button.seat-grid__seat {
   background: repeating-linear-gradient(
     45deg,
     var(--color-surface-alt),
-    var(--color-surface-alt) 4px,
-    var(--color-border) 4px,
-    var(--color-border) 6px
+    var(--color-surface-alt) var(--seat-stripe-width),
+    var(--color-border) var(--seat-stripe-width),
+    var(--color-border) calc(var(--seat-stripe-width) + var(--seat-stripe-gap))
   );
   color: var(--color-text-muted);
   text-decoration: line-through;
@@ -164,7 +176,7 @@ button.seat-grid__seat:disabled {
 }
 
 button.seat-grid__seat--available:disabled {
-  opacity: 0.45;
+  opacity: var(--seat-unavailable-opacity);
 }
 
 button.seat-grid__seat--available:not(:disabled):hover {
@@ -172,10 +184,9 @@ button.seat-grid__seat--available:not(:disabled):hover {
 }
 
 @media (max-width: 40rem) {
-  .seat-grid__seat--selected::after {
-    top: -0.35rem;
-    right: -0.25rem;
-    width: 0.8rem;
-    height: 0.8rem;
+  .seat-grid {
+    --seat-check-size: 0.8rem;
+    --seat-check-offset-top: -0.35rem;
+    --seat-check-offset-right: -0.25rem;
   }
 }
