@@ -1,0 +1,108 @@
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--tree-row-min-height);
+  padding-inline-end: var(--space-2);
+  border-radius: calc(var(--radius) / 2);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.tree-row:hover {
+  background: var(--color-surface-alt);
+}
+
+/* Inset so the ring is not clipped by the scrolling panel around the tree. */
+.tree-row:focus-visible {
+  outline-offset: calc(-1 * var(--tree-selected-marker-width));
+}
+
+/* Selection is shown by weight and an edge marker as well as colour. */
+.tree-row--selected,
+.tree-row--selected:hover {
+  background: color-mix(
+    in srgb,
+    var(--color-primary) var(--tree-selected-tint),
+    var(--color-surface)
+  );
+  box-shadow: inset var(--tree-selected-marker-width) 0 0 var(--color-primary);
+  font-weight: 600;
+}
+
+.tree-row__toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tree-toggle-size);
+  height: var(--tree-toggle-size);
+  border-radius: calc(var(--radius) / 2);
+  color: var(--color-text-muted);
+  transition: transform var(--tree-toggle-duration) ease-out;
+}
+
+.tree-row__toggle[data-tree-toggle]:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.tree-row__toggle--expanded {
+  transform: rotate(90deg);
+}
+
+.tree-row__icon {
+  flex: none;
+}
+
+.tree-row__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-row__status {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--tree-status-font-size);
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.tree-row__status::before {
+  content: '';
+  width: var(--tree-spinner-size);
+  height: var(--tree-spinner-size);
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: tree-row-spin var(--tree-spinner-period) linear infinite;
+}
+
+.tree-row--error {
+  color: var(--color-danger);
+}
+
+.tree-row__retry {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+@keyframes tree-row-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tree-row__toggle {
+    transition: none;
+  }
+
+  .tree-row__status::before {
+    animation: none;
+  }
+}

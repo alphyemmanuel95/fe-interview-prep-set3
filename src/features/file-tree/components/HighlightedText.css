@@ -1,0 +1,12 @@
+.highlighted-text__match {
+  --highlight-tint: 28%;
+  --highlight-offset: 2px;
+
+  padding: 0;
+  border-radius: var(--highlight-offset);
+  background: color-mix(in srgb, var(--color-warning) var(--highlight-tint), transparent);
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: var(--highlight-offset);
+}

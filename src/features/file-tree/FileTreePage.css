@@ -1,0 +1,58 @@
+.file-tree {
+  --file-tree-search-width: 28rem;
+  --file-tree-panel-max-height: 70vh;
+}
+
+.file-tree__intro {
+  max-width: 60ch;
+  color: var(--color-text-muted);
+}
+
+.file-tree__search {
+  display: grid;
+  gap: var(--space-1);
+  max-width: var(--file-tree-search-width);
+  margin-block-end: var(--space-3);
+}
+
+.file-tree__search-label {
+  font-weight: 600;
+}
+
+.file-tree__search-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.file-tree__search-status {
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.file-tree__panel {
+  max-height: var(--file-tree-panel-max-height);
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+/* A search with no matches leaves no rows; the status line above already says so. */
+.file-tree__panel:has(.tree__list:empty) {
+  display: none;
+}
+
+.file-tree__selection {
+  margin: var(--space-3) 0 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+}
+
+.file-tree__selection code {
+  color: var(--color-text);
+}
