@@ -31,6 +31,10 @@ function isUploadStatus(value: unknown): value is UploadStatus {
   return typeof value === 'string' && Object.hasOwn(KNOWN_STATUSES, value);
 }
 
+function isByteCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
 function isPersistedUpload(value: unknown): value is PersistedUpload {
   return (
     typeof value === 'object' &&
@@ -40,7 +44,7 @@ function isPersistedUpload(value: unknown): value is PersistedUpload {
     'name' in value &&
     typeof value.name === 'string' &&
     'size' in value &&
-    typeof value.size === 'number' &&
+    isByteCount(value.size) &&
     'lastModified' in value &&
     typeof value.lastModified === 'number' &&
     'idempotencyKey' in value &&
@@ -50,8 +54,13 @@ function isPersistedUpload(value: unknown): value is PersistedUpload {
   );
 }
 
+// Ids key React rows and every reducer transition, so a duplicate would make two rows act as one.
 function isPersistedQueue(value: unknown): value is readonly PersistedUpload[] {
-  return Array.isArray(value) && value.every(isPersistedUpload);
+  if (!Array.isArray(value) || !value.every(isPersistedUpload)) {
+    return false;
+  }
+  const ids = new Set(value.map((upload) => upload.id));
+  return ids.size === value.length;
 }
 
 export function toPersistedQueue(queue: UploadQueue): readonly PersistedUpload[] {

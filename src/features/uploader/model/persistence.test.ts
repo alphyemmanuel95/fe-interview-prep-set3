@@ -52,10 +52,13 @@ describe('upload queue persistence', () => {
     expect(toPersistedQueue([uploading])).toEqual([persisted('a', 'uploading')]);
   });
 
-  it('falls back to an empty queue for invalid stored data', () => {
-    saveToStorage(QUEUE_STORAGE_KEY, QUEUE_STORAGE_VERSION, [
-      { ...persisted('a', 'done'), status: 'exploded' },
-    ]);
+  it.each([
+    ['an unknown status', [{ ...persisted('a', 'done'), status: 'exploded' }]],
+    ['a negative size', [{ ...persisted('a', 'done'), size: -1 }]],
+    ['a fractional size', [{ ...persisted('a', 'done'), size: 1.5 }]],
+    ['duplicate ids', [persisted('a', 'done'), persisted('a', 'queued')]],
+  ])('falls back to an empty queue for stored data with %s', (_, stored) => {
+    saveToStorage(QUEUE_STORAGE_KEY, QUEUE_STORAGE_VERSION, stored);
 
     expect(loadQueue()).toEqual([]);
   });
