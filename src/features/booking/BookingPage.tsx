@@ -1,5 +1,6 @@
 import type { JSX, SubmitEvent } from 'react';
 import { assertNever } from '../../shared/assertNever';
+import { AttendeeStep } from './components/AttendeeStep';
 import { BookingProgress } from './components/BookingProgress';
 import { ErrorSummary } from './components/ErrorSummary';
 import { EventStep } from './components/EventStep';
@@ -52,6 +53,16 @@ export function BookingPage(): JSX.Element {
           />
         );
       case 'attendees':
+        return (
+          <AttendeeStep
+            seatIds={draft.seatIds}
+            attendees={draft.attendees}
+            errors={errors}
+            onNameChange={(seatId, name) => {
+              dispatch({ type: 'attendeeNameChanged', seatId, name });
+            }}
+          />
+        );
       case 'review':
         return null;
       default:
