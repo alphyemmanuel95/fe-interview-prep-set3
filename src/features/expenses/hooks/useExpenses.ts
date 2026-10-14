@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { loadFromStorage, saveToStorage } from '../../../shared/storage';
 import { type Expense, type ExpenseDraft, expensesReducer, isExpenseList } from '../model/expenses';
 
@@ -9,22 +9,27 @@ export type UseExpensesResult = Readonly<{
   deleteExpense: (id: string) => void;
 }>;
 
-const STORAGE_KEY = 'expenses';
+export const EXPENSES_STORAGE_KEY = 'expenses';
 // Bump when the Expense shape changes; older data then falls back to an empty list.
-const STORAGE_VERSION = 1;
+export const EXPENSES_STORAGE_VERSION = 1;
 const NO_EXPENSES: readonly Expense[] = [];
 
 const loadExpenses = (): readonly Expense[] =>
-  loadFromStorage(STORAGE_KEY, STORAGE_VERSION, isExpenseList, NO_EXPENSES);
+  loadFromStorage(EXPENSES_STORAGE_KEY, EXPENSES_STORAGE_VERSION, isExpenseList, NO_EXPENSES);
 
 export function useExpenses(): UseExpensesResult {
   // Lazy initialiser: storage is read once on mount, not on every render.
   const [expenses, dispatch] = useReducer(expensesReducer, undefined, loadExpenses);
+  const loadedExpensesRef = useRef(expenses);
 
-  // One effect persists every change, whichever action caused it. Writing the same list twice
-  // under StrictMode is harmless.
+  // One effect persists every change, whichever action caused it. The list loaded on mount is
+  // skipped: if stored data failed the guard we fell back to [], and writing that back would
+  // erase the user's data before they had changed anything.
   useEffect(() => {
-    saveToStorage(STORAGE_KEY, STORAGE_VERSION, expenses);
+    if (expenses === loadedExpensesRef.current) {
+      return;
+    }
+    saveToStorage(EXPENSES_STORAGE_KEY, EXPENSES_STORAGE_VERSION, expenses);
   }, [expenses]);
 
   return {
