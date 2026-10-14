@@ -211,7 +211,9 @@ describe('UploaderPage', () => {
     const { transport, uploads } = createControllableTransport();
     render(<UploaderPage transport={transport} />);
 
-    expect(screen.getByText('Needs re-select: add this file again to resume')).toBeInTheDocument();
+    expect(
+      screen.getByText('Needs re-select: choose this file again to resume'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Uploaded')).toBeInTheDocument();
     expect(uploads).toHaveLength(0);
 
@@ -230,6 +232,33 @@ describe('UploaderPage', () => {
       expect(uploads[1]?.request.idempotencyKey).toBe('key-report');
     });
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  it('re-selects a restored file from its row and rejects a different file', async () => {
+    saveQueue([
+      {
+        id: 'a',
+        name: 'report.pdf',
+        size: 3,
+        lastModified: LAST_MODIFIED,
+        idempotencyKey: 'key-report',
+        status: 'queued',
+      },
+    ]);
+    const user = userEvent.setup();
+    const { transport, uploads } = createControllableTransport();
+    render(<UploaderPage transport={transport} />);
+    expect(screen.getByRole('button', { name: 'Re-select report.pdf' })).toBeInTheDocument();
+    const rowPicker = screen.getByLabelText('Re-select file for report.pdf');
+
+    await user.upload(rowPicker, new File(['other'], 'notes.txt'));
+    expect(screen.getByRole('alert')).toHaveTextContent('"notes.txt" is not the original file.');
+    expect(uploads).toHaveLength(0);
+
+    await user.upload(rowPicker, new File(['abc'], 'report.pdf', { lastModified: LAST_MODIFIED }));
+    await waitFor(() => {
+      expect(uploads[0]?.request.idempotencyKey).toBe('key-report');
+    });
   });
 
   it('warns before closing the tab only while uploads are running', async () => {

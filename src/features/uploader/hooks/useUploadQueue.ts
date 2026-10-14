@@ -13,6 +13,8 @@ export type UploadQueueControls = Readonly<{
   addFiles: (files: readonly File[]) => void;
   cancel: (id: string) => void;
   retry: (id: string) => void;
+  /** Re-attaches the file of an item restored after a reload; the caller checks it matches. */
+  reselect: (id: string, file: File) => void;
   remove: (id: string) => void;
 }>;
 
@@ -166,11 +168,16 @@ export function useUploadQueue(transport: UploadTransport): UploadQueueControls 
     dispatch({ type: 'retryRequested', id });
   }
 
+  function reselect(id: string, file: File): void {
+    filesRef.current.set(id, file);
+    dispatch({ type: 'filesAdded', newItems: [], reattachedIds: [id] });
+  }
+
   function remove(id: string): void {
     abortRequest(id);
     filesRef.current.delete(id);
     dispatch({ type: 'removed', id });
   }
 
-  return { items, announcement, addFiles, cancel, retry, remove };
+  return { items, announcement, addFiles, cancel, retry, reselect, remove };
 }

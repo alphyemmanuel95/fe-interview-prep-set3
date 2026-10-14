@@ -16,7 +16,8 @@ type UploaderPageProps = Readonly<{
 }>;
 
 export function UploaderPage({ transport = xhrUploadTransport }: UploaderPageProps): JSX.Element {
-  const { items, announcement, addFiles, cancel, retry, remove } = useUploadQueue(transport);
+  const { items, announcement, addFiles, cancel, retry, reselect, remove } =
+    useUploadQueue(transport);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   useBeforeUnloadWarning(items.some(isActive));
@@ -57,6 +58,7 @@ export function UploaderPage({ transport = xhrUploadTransport }: UploaderPagePro
               item={item}
               onCancel={cancel}
               onRetry={retry}
+              onReselect={reselect}
               onRemove={handleRemove}
             />
           ))}

@@ -1,8 +1,9 @@
-import type { JSX, ReactNode } from 'react';
+import { useRef, useState } from 'react';
+import type { ChangeEvent, JSX, ReactNode } from 'react';
 import { assertNever } from '../../../shared/assertNever';
 import { formatFileSize } from '../model/format';
 import type { UploadItem } from '../model/uploadQueue';
-import { canRetry, isActive } from '../model/uploadQueue';
+import { canRetry, isActive, isSameFile } from '../model/uploadQueue';
 import { useActionSwapGuard } from '../hooks/useActionSwapGuard';
 import { RetryStatus } from './RetryStatus';
 import './UploadRow.css';
@@ -11,6 +12,7 @@ type UploadRowProps = Readonly<{
   item: UploadItem;
   onCancel: (id: string) => void;
   onRetry: (id: string) => void;
+  onReselect: (id: string, file: File) => void;
   onRemove: (id: string) => void;
 }>;
 
@@ -33,7 +35,7 @@ function describeStatus(item: UploadItem): ReactNode {
     case 'cancelled':
       return 'Cancelled';
     case 'needs-reselect':
-      return 'Needs re-select: add this file again to resume';
+      return 'Needs re-select: choose this file again to resume';
     default:
       return assertNever(item);
   }
@@ -48,11 +50,12 @@ function getProgress(item: UploadItem): number | null {
   return item.status === 'done' ? 1 : null;
 }
 
-type RowAction = 'cancel' | 'retry' | 'remove';
+type RowAction = 'cancel' | 'retry' | 'reselect' | 'remove';
 
 const ACTION_LABELS = {
   cancel: 'Cancel',
   retry: 'Retry',
+  reselect: 'Re-select',
   remove: 'Remove',
 } as const satisfies Record<RowAction, string>;
 
@@ -60,12 +63,23 @@ function getPrimaryAction(item: UploadItem): RowAction {
   if (isActive(item)) {
     return 'cancel';
   }
-  return canRetry(item) ? 'retry' : 'remove';
+  if (canRetry(item)) {
+    return 'retry';
+  }
+  return item.status === 'needs-reselect' ? 'reselect' : 'remove';
 }
 
-export function UploadRow({ item, onCancel, onRetry, onRemove }: UploadRowProps): JSX.Element {
+export function UploadRow({
+  item,
+  onCancel,
+  onRetry,
+  onReselect,
+  onRemove,
+}: UploadRowProps): JSX.Element {
   const primaryAction = getPrimaryAction(item);
-  const hasSecondaryRemove = primaryAction === 'retry';
+  const hasSecondaryRemove = primaryAction === 'retry' || primaryAction === 'reselect';
+  const reselectInputRef = useRef<HTMLInputElement>(null);
+  const [reselectError, setReselectError] = useState<string | null>(null);
   const isSwapGuardActive = useActionSwapGuard(primaryAction);
   const progress = getProgress(item);
 
@@ -80,11 +94,32 @@ export function UploadRow({ item, onCancel, onRetry, onRemove }: UploadRowProps)
       case 'retry':
         onRetry(item.id);
         return;
+      case 'reselect':
+        reselectInputRef.current?.click();
+        return;
       case 'remove':
         onRemove(item.id);
         return;
       default:
         assertNever(primaryAction);
+    }
+  }
+
+  // Only the original file may resume under this item's idempotency key; anything else would be
+  // reported by the server as a duplicate of the old upload.
+  function handleReselectChange(event: ChangeEvent<HTMLInputElement>): void {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (file === undefined) {
+      return;
+    }
+    if (isSameFile(item, file)) {
+      setReselectError(null);
+      onReselect(item.id, file);
+    } else {
+      setReselectError(
+        `"${file.name}" is not the original file. Choose ${item.name} (${formatFileSize(item.size)}) as it was before the reload.`,
+      );
     }
   }
 
@@ -137,6 +172,23 @@ export function UploadRow({ item, onCancel, onRetry, onRemove }: UploadRowProps)
           )}
         </div>
       </div>
+      {primaryAction === 'reselect' && (
+        <>
+          {/* Opened by the Re-select button; not focusable on its own. */}
+          <input
+            ref={reselectInputRef}
+            type="file"
+            hidden
+            aria-label={`Re-select file for ${item.name}`}
+            onChange={handleReselectChange}
+          />
+          {reselectError !== null && (
+            <p className="upload-row__error" role="alert">
+              {reselectError}
+            </p>
+          )}
+        </>
+      )}
     </li>
   );
 }
