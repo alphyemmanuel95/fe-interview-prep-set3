@@ -182,7 +182,10 @@ describe('BookingPage', () => {
     await clickNext(user);
 
     await user.click(screen.getByRole('button', { name: 'Confirm booking' }));
-    expect(screen.getByRole('button', { name: 'Submitting…' })).toBeDisabled();
+    const submittingButton = screen.getByRole('button', { name: 'Submitting…' });
+    expect(submittingButton).toHaveAttribute('aria-disabled', 'true');
+    expect(submittingButton).toHaveFocus();
+    expect(screen.getByRole('form')).toHaveAttribute('aria-busy', 'true');
     await act(() => vi.advanceTimersByTimeAsync(SIMULATED_LATENCY_MS));
 
     expect(screen.getByRole('heading', { name: /Booking confirmed/ })).toHaveFocus();

@@ -45,6 +45,9 @@ export function BookingPage(): JSX.Element {
   // A real <form> means Enter in any field advances the step, just like the Next button.
   function handleSubmit(submitEvent: SubmitEvent<HTMLFormElement>): void {
     submitEvent.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
     if (draft.step === 'review') {
       confirmBooking();
     } else {
@@ -71,6 +74,7 @@ export function BookingPage(): JSX.Element {
           className="booking__panel"
           aria-labelledby="booking-step-title"
           noValidate
+          aria-busy={isSubmitting}
           onSubmit={handleSubmit}
         >
           <h2
@@ -92,12 +96,14 @@ export function BookingPage(): JSX.Element {
             today={today}
             dispatch={dispatch}
           />
+          {/* aria-disabled, not disabled: disabling the focused button would drop focus to <body>.
+              Clicks while busy are ignored by handleSubmit and by the reducer's navigation guard. */}
           <div className="booking__actions">
             {draft.step !== 'event' && (
               <button
                 type="button"
                 className="booking__button booking__button--secondary"
-                disabled={isSubmitting}
+                aria-disabled={isSubmitting}
                 onClick={() => {
                   dispatch({ type: 'backRequested' });
                 }}
@@ -108,7 +114,7 @@ export function BookingPage(): JSX.Element {
             <button
               type="submit"
               className="booking__button booking__button--primary"
-              disabled={isSubmitting}
+              aria-disabled={isSubmitting}
             >
               {getPrimaryActionLabel(draft.step, isSubmitting)}
             </button>
