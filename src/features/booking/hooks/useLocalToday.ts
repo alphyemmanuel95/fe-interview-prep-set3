@@ -7,11 +7,12 @@ function getMsUntilNextLocalMidnight(now: Date): number {
 }
 
 /**
- * Today's local `YYYY-MM-DD` for rendering (the date input's `min` and live error messages).
- * It rolls over at local midnight so a page left open overnight stays current. The Next and
- * Confirm gates don't rely on it: they read the clock themselves at the moment of the action.
+ * Today's local `YYYY-MM-DD`, plus `refreshToday` for the Next and Confirm gates.
+ * - The value rolls over at local midnight, so a page left open overnight stays current.
+ * - `refreshToday` reads the clock at the moment of the action and stores the result, so the
+ *   gate's decision and the errors rendered afterwards always use the same date.
  */
-export function useLocalToday(): string {
+export function useLocalToday(): readonly [today: string, refreshToday: () => string] {
   const [today, setToday] = useState(() => toLocalIsoDate(new Date()));
 
   useEffect(() => {
@@ -34,5 +35,11 @@ export function useLocalToday(): string {
     };
   }, [today]);
 
-  return today;
+  function refreshToday(): string {
+    const current = toLocalIsoDate(new Date());
+    setToday(current);
+    return current;
+  }
+
+  return [today, refreshToday];
 }

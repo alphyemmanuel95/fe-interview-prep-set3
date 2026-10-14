@@ -15,7 +15,7 @@ describe('useLocalToday', () => {
   });
 
   it('rolls over at local midnight', async () => {
-    const { result } = renderHook(() => useLocalToday());
+    const { result } = renderHook(() => useLocalToday()[0]);
     expect(result.current).toBe('2026-10-14');
 
     await act(() => vi.advanceTimersByTimeAsync(HOUR_MS));
@@ -24,7 +24,7 @@ describe('useLocalToday', () => {
   });
 
   it('keeps rolling over when the timer fires before the day has changed', async () => {
-    const { result } = renderHook(() => useLocalToday());
+    const { result } = renderHook(() => useLocalToday()[0]);
     // The wall clock jumps back (sleep, NTP or DST), so the timer fires while it is still the 14th.
     vi.setSystemTime(new Date(2026, 9, 14, 22));
 

@@ -30,6 +30,7 @@ export type BookingAction =
   | Readonly<{ type: 'nextRequested'; today: string }>
   | Readonly<{ type: 'backRequested' }>
   | Readonly<{ type: 'stepRequested'; step: BookingStep }>
+  | Readonly<{ type: 'submitBlocked'; step: BookingStep }>
   | Readonly<{ type: 'submitStarted' }>
   | Readonly<{ type: 'submitSucceeded'; confirmation: BookingConfirmation }>
   | Readonly<{ type: 'submitFailed'; error: string }>
@@ -80,6 +81,11 @@ function goToStep(state: BookingState, step: BookingStep): BookingState {
   return createBookingState({ ...state.draft, step });
 }
 
+/** Counts as a blocked attempt, which shows (and focuses) the errors for the current step. */
+export function revealErrors(state: BookingState): BookingState {
+  return { ...state, failedNextAttempts: state.failedNextAttempts + 1 };
+}
+
 export function bookingReducer(state: BookingState, action: BookingAction): BookingState {
   const { draft } = state;
   switch (action.type) {
@@ -100,7 +106,7 @@ export function bookingReducer(state: BookingState, action: BookingAction): Book
     case 'nextRequested':
       // The reducer, not the button, owns the rule "no advancing past an invalid step".
       if (validateStep(draft.step, draft, action.today).length > 0) {
-        return { ...state, failedNextAttempts: state.failedNextAttempts + 1 };
+        return revealErrors(state);
       }
       return goToStep(state, getNextStep(draft.step));
     case 'backRequested':
@@ -108,6 +114,10 @@ export function bookingReducer(state: BookingState, action: BookingAction): Book
     case 'stepRequested':
       // Only earlier steps can be jumped to; later ones must be reached through validation.
       return isStepBefore(action.step, draft.step) ? goToStep(state, action.step) : state;
+    case 'submitBlocked':
+      // The draft went stale on the review step (e.g. the date passed overnight). Return to the
+      // first invalid step with its errors revealed, so the user sees why instead of a silent jump.
+      return revealErrors(goToStep(state, action.step));
     case 'submitStarted':
       return { ...state, submission: { status: 'submitting' } };
     case 'submitSucceeded':

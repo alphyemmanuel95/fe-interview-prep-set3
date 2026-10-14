@@ -171,6 +171,41 @@ describe('BookingPage', () => {
     expect(screen.getByText('₹1,250.00')).toBeInTheDocument();
   });
 
+  it('explains why Confirm returned to an earlier step when the date went stale', async () => {
+    const { user } = setup();
+    await completeEventStep(user);
+    await selectSeats(user, ['C1']);
+    await clickNext(user);
+    await user.type(screen.getByLabelText(/seat C1/), 'Chen');
+    await clickNext(user);
+    expect(getStepHeading()).toHaveTextContent('Review');
+
+    vi.setSystemTime(new Date(2026, 9, 21, 12));
+    await user.click(screen.getByRole('button', { name: 'Confirm booking' }));
+
+    expect(getStepHeading()).toHaveTextContent('Event & date');
+    expect(screen.getByText('Fix the following to continue').closest('[tabindex]')).toHaveFocus();
+    expect(screen.getByLabelText('Date')).toHaveAccessibleDescription(
+      'Error: Choose today or a future date.',
+    );
+  });
+
+  it('explains why a restored draft resumes at an earlier step', async () => {
+    const { user, reload } = setup();
+    await completeEventStep(user);
+    await selectSeats(user, ['C1']);
+    expect(getStepHeading()).toHaveTextContent('Seats');
+
+    vi.setSystemTime(new Date(2026, 9, 21, 12));
+    reload();
+
+    expect(getStepHeading()).toHaveTextContent('Event & date');
+    expect(screen.getByText('Fix the following to continue')).toBeInTheDocument();
+    expect(screen.getByLabelText('Date')).toHaveAccessibleDescription(
+      'Error: Choose today or a future date.',
+    );
+  });
+
   it('restores progress after a reload and clears it after booking', async () => {
     const { user, reload } = setup();
     await completeEventStep(user);

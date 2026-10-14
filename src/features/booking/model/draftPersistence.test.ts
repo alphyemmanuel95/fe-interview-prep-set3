@@ -26,24 +26,30 @@ describe('isStoredDraft', () => {
 
 describe('restoreDraft', () => {
   it('restores a valid draft, with seats in layout order', () => {
-    expect(restoreDraft(storedDraft, TODAY)).toEqual({ ...storedDraft, seatIds: ['A1', 'C3'] });
+    expect(restoreDraft(storedDraft, TODAY)).toEqual({
+      draft: { ...storedDraft, seatIds: ['A1', 'C3'] },
+      wasRewound: false,
+    });
   });
 
   it('drops booked and unknown seats together with their attendees', () => {
-    const restored = restoreDraft(
+    const { draft } = restoreDraft(
       { ...storedDraft, seatIds: ['A1', 'A4', 'Z9'], attendees: { A1: 'Asha', A4: 'Booked' } },
       TODAY,
     );
 
-    expect(restored.seatIds).toEqual(['A1']);
-    expect(restored.attendees).toEqual({ A1: 'Asha' });
+    expect(draft.seatIds).toEqual(['A1']);
+    expect(draft.attendees).toEqual({ A1: 'Asha' });
   });
 
-  it('sends the user back to the first step that is no longer valid', () => {
-    expect(restoreDraft({ ...storedDraft, date: '2026-10-01' }, TODAY).step).toBe('event');
+  it('sends the user back to the first step that is no longer valid, and says so', () => {
+    expect(restoreDraft({ ...storedDraft, date: '2026-10-01' }, TODAY)).toMatchObject({
+      draft: { step: 'event' },
+      wasRewound: true,
+    });
     expect(restoreDraft({ ...storedDraft, eventId: 'retired-event' }, TODAY)).toMatchObject({
-      eventId: null,
-      step: 'event',
+      draft: { eventId: null, step: 'event' },
+      wasRewound: true,
     });
   });
 });

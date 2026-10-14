@@ -33,12 +33,18 @@ export function isStoredDraft(value: unknown): value is StoredDraft {
   );
 }
 
+export type RestoredDraft = Readonly<{
+  draft: BookingDraft;
+  /** True when progress had to be rewound to a step that is no longer valid. */
+  wasRewound: boolean;
+}>;
+
 /**
  * Turns a stored draft back into domain values, dropping anything that is no longer valid:
  * unknown events, seats that are unknown or booked since, and attendees without a seat.
  * It never resumes past a step that is now invalid, e.g. a saved date that is in the past.
  */
-export function restoreDraft(stored: StoredDraft, today: string): BookingDraft {
+export function restoreDraft(stored: StoredDraft, today: string): RestoredDraft {
   const seatIds = sortSeatIds(stored.seatIds)
     .filter((seatId) => !isSeatBooked(seatId))
     .slice(0, MAX_SEATS_PER_BOOKING);
@@ -51,7 +57,7 @@ export function restoreDraft(stored: StoredDraft, today: string): BookingDraft {
   };
   const firstInvalidStep = findFirstInvalidStep(draft, today);
   if (firstInvalidStep !== null && isStepBefore(firstInvalidStep, draft.step)) {
-    return { ...draft, step: firstInvalidStep };
+    return { draft: { ...draft, step: firstInvalidStep }, wasRewound: true };
   }
-  return draft;
+  return { draft, wasRewound: false };
 }

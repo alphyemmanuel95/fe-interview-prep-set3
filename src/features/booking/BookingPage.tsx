@@ -9,7 +9,6 @@ import { useFocusOnChange } from './hooks/useFocusOnChange';
 import { useFocusOnIncrease } from './hooks/useFocusOnIncrease';
 import { useLocalToday } from './hooks/useLocalToday';
 import { prepareBookingRequest } from './model/bookingRequest';
-import { toLocalIsoDate } from './model/localDate';
 import { BOOKING_STEPS, getStepNumber, STEP_LABELS } from './model/steps';
 import type { BookingStep } from './model/steps';
 import { validateStep } from './model/validation';
@@ -23,7 +22,7 @@ function getPrimaryActionLabel(step: BookingStep, isSubmitting: boolean): string
 }
 
 export function BookingPage(): JSX.Element {
-  const today = useLocalToday();
+  const [today, refreshToday] = useLocalToday();
   const [state, dispatch] = useBookingDraft(today);
   const submit = useBookingSubmission(dispatch);
   const { draft, failedNextAttempts, submission } = state;
@@ -35,9 +34,9 @@ export function BookingPage(): JSX.Element {
   const isSubmitting = submission.status === 'submitting';
 
   function confirmBooking(): void {
-    const prepared = prepareBookingRequest(draft, toLocalIsoDate(new Date()));
+    const prepared = prepareBookingRequest(draft, refreshToday());
     if (prepared.status === 'invalid') {
-      dispatch({ type: 'stepRequested', step: prepared.step });
+      dispatch({ type: 'submitBlocked', step: prepared.step });
       return;
     }
     submit(prepared.request);
@@ -50,7 +49,7 @@ export function BookingPage(): JSX.Element {
       confirmBooking();
     } else {
       // The gates read the clock at the moment of the action rather than trusting rendered state.
-      dispatch({ type: 'nextRequested', today: toLocalIsoDate(new Date()) });
+      dispatch({ type: 'nextRequested', today: refreshToday() });
     }
   }
 

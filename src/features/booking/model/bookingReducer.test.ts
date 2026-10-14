@@ -99,6 +99,16 @@ describe('bookingReducer', () => {
     expect(state.submission).toEqual({ status: 'success', confirmation });
   });
 
+  it('reveals the errors of the step a blocked submit returns to', () => {
+    const state = bookingReducer(createBookingState({ ...EMPTY_DRAFT, step: 'review' }), {
+      type: 'submitBlocked',
+      step: 'event',
+    });
+
+    expect(state.draft.step).toBe('event');
+    expect(state.failedNextAttempts).toBe(1);
+  });
+
   it('ignores navigation while a submit is in flight', () => {
     const submitting = reduce(createBookingState({ ...EMPTY_DRAFT, step: 'review' }), [
       { type: 'submitStarted' },
