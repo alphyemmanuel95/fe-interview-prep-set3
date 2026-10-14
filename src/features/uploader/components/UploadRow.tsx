@@ -39,11 +39,13 @@ function describeStatus(item: UploadItem): ReactNode {
   }
 }
 
-function getProgress(item: UploadItem): number {
+// A bar only means something while bytes are moving or once they all arrived; an empty bar on
+// queued, failed or cancelled rows would read as "0% uploaded".
+function getProgress(item: UploadItem): number | null {
   if (item.status === 'uploading') {
     return item.progress;
   }
-  return item.status === 'done' ? 1 : 0;
+  return item.status === 'done' ? 1 : null;
 }
 
 type RowAction = 'cancel' | 'retry' | 'remove';
@@ -65,6 +67,7 @@ export function UploadRow({ item, onCancel, onRetry, onRemove }: UploadRowProps)
   const primaryAction = getPrimaryAction(item);
   const hasSecondaryRemove = primaryAction === 'retry';
   const isSwapGuardActive = useActionSwapGuard(primaryAction);
+  const progress = getProgress(item);
 
   function handlePrimaryAction(): void {
     if (isSwapGuardActive()) {
@@ -97,12 +100,14 @@ export function UploadRow({ item, onCancel, onRetry, onRemove }: UploadRowProps)
         <span className="upload-row__name">{item.name}</span>
         <span className="upload-row__size">{formatFileSize(item.size)}</span>
       </div>
-      <progress
-        className="upload-row__progress"
-        max={1}
-        value={getProgress(item)}
-        aria-label={`Upload progress for ${item.name}`}
-      />
+      {progress !== null && (
+        <progress
+          className="upload-row__progress"
+          max={1}
+          value={progress}
+          aria-label={`Upload progress for ${item.name}`}
+        />
+      )}
       <div className="upload-row__footer">
         <p className="upload-row__status">{describeStatus(item)}</p>
         <div className="upload-row__actions">
