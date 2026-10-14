@@ -8,6 +8,8 @@ type SearchStatusProps = Readonly<{
   /** The query as the user typed it, quoted back in the empty message. */
   query: string;
   isVisible: boolean;
+  /** False while a newer query is pending, so Retry can't re-run the query being replaced. */
+  canRetry: boolean;
   onRetry: () => void;
 }>;
 
@@ -28,7 +30,13 @@ function describeStatus(state: CitySearchState, query: string): string {
   }
 }
 
-export function SearchStatus({ state, query, isVisible, onRetry }: SearchStatusProps): JSX.Element {
+export function SearchStatus({
+  state,
+  query,
+  isVisible,
+  canRetry,
+  onRetry,
+}: SearchStatusProps): JSX.Element {
   const isError = state.status === 'error';
   return (
     <div className="search-status">
@@ -44,7 +52,7 @@ export function SearchStatus({ state, query, isVisible, onRetry }: SearchStatusP
       >
         {isVisible ? describeStatus(state, query) : ''}
       </p>
-      {isVisible && isError && (
+      {isVisible && canRetry && isError && (
         <button type="button" className="search-status__retry" onClick={onRetry}>
           Retry
         </button>

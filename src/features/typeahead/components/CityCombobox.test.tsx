@@ -182,6 +182,19 @@ describe('CityCombobox states', () => {
     expect(input).toHaveFocus();
   });
 
+  it('hides Retry while a newer query is pending', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
+    const { user, input } = setup();
+
+    await user.type(input, 'del');
+    await finishTyping();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+
+    await user.type(input, 'h');
+
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+
   it('refetches a previously failed query when the user returns to it', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 500 }));
     const { user, input } = setup();
@@ -260,6 +273,21 @@ describe('CityCombobox keyboard and mouse', () => {
       'aria-selected',
       'true',
     );
+  });
+
+  it('ignores Enter while the visible results belong to an older query', async () => {
+    const { user, input } = await openWithResults();
+
+    await user.type(input, 'h');
+    expect(screen.getByRole('listbox')).toHaveAttribute('aria-busy', 'true');
+    await user.keyboard('{ArrowDown}{Enter}');
+
+    expect(input).toHaveValue('delh');
+    expect(screen.queryByText(/Selected/)).not.toBeInTheDocument();
+
+    await finishTyping();
+    expect(screen.getByRole('listbox')).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getAllByRole('option')).toHaveLength(1);
   });
 
   it('scrolls the active option into view', async () => {

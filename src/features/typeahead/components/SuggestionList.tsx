@@ -12,6 +12,8 @@ type SuggestionListProps = Readonly<{
   query: string;
   activeId: number | null;
   isHidden: boolean;
+  /** The suggestions belong to an older query while a newer one is still being debounced. */
+  isStale: boolean;
   onSelect: (suggestion: CitySuggestion) => void;
 }>;
 
@@ -29,11 +31,19 @@ export function SuggestionList({
   query,
   activeId,
   isHidden,
+  isStale,
   onSelect,
 }: SuggestionListProps): JSX.Element {
   return (
     // Always rendered so the input's aria-controls never points at a missing element.
-    <div id={id} role="listbox" aria-labelledby={labelId} className="suggestions" hidden={isHidden}>
+    <div
+      id={id}
+      role="listbox"
+      aria-labelledby={labelId}
+      aria-busy={isStale}
+      className={isStale ? 'suggestions suggestions--stale' : 'suggestions'}
+      hidden={isHidden}
+    >
       {suggestions.map((suggestion) => {
         const isActive = suggestion.id === activeId;
         // Select on mousedown and cancel its default so focus never leaves the input:

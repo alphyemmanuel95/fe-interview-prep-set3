@@ -19,11 +19,13 @@ export function CityCombobox(): JSX.Element {
   // A committed selection is not a query: searching for the chosen name would send a request
   // nobody asked for. Search goes idle at once and resumes when the user edits the text again.
   const hasSelection = state.selected !== null;
-  const debouncedQuery = useDebouncedValue(
-    hasSelection ? '' : state.inputValue,
-    SEARCH_DEBOUNCE_MS,
-  );
+  const searchQuery = hasSelection ? '' : state.inputValue;
+  const debouncedQuery = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
   const search = useCitySearch(hasSelection ? '' : debouncedQuery);
+  // The search state describes debouncedQuery. Until the debounce catches up with the input, the
+  // results on screen belong to an older query: they stay visible (dimmed, aria-busy) but can't
+  // be selected or retried.
+  const isStale = normaliseQuery(searchQuery) !== normaliseQuery(debouncedQuery);
 
   const inputId = useId();
   const labelId = useId();
@@ -62,7 +64,7 @@ export function CityCombobox(): JSX.Element {
         });
         break;
       case 'Enter':
-        if (activeSuggestion !== undefined) {
+        if (activeSuggestion !== undefined && !isStale) {
           event.preventDefault();
           handleSelect(activeSuggestion);
         }
@@ -118,6 +120,7 @@ export function CityCombobox(): JSX.Element {
           query={normaliseQuery(debouncedQuery)}
           activeId={activeSuggestion?.id ?? null}
           isHidden={!isExpanded}
+          isStale={isStale}
           onSelect={handleSelect}
         />
       </div>
@@ -125,6 +128,7 @@ export function CityCombobox(): JSX.Element {
         state={search.state}
         query={debouncedQuery.trim()}
         isVisible={isStatusVisible}
+        canRetry={!isStale}
         onRetry={handleRetry}
       />
       {state.selected !== null && (
