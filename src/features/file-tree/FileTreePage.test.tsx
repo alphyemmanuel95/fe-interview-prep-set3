@@ -1,8 +1,10 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { StrictMode } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../app/routes';
+import { fileSystem } from './api/fileSystem';
 import {
   createMockFileSystem,
   DEFAULT_LATENCY_MS,
@@ -125,6 +127,27 @@ describe('FileTreePage', () => {
     expect(selected).toHaveAccessibleName(node.label);
     expect(selected).toHaveAttribute('aria-level', '3');
     expect(scrollIntoView().mock.contexts).toContain(selected);
+  });
+
+  it('loads each folder of a shared link exactly once under StrictMode', async () => {
+    const loadChildren = vi.spyOn(fileSystem, 'loadChildren');
+    const node = pickDeepNode();
+    const expanded = encodeURIComponent(node.ancestorIds.join(','));
+    const router = createMemoryRouter(routes, {
+      initialEntries: [`/file-tree?expanded=${expanded}&selected=${encodeURIComponent(node.id)}`],
+    });
+    // StrictMode double-invokes effects on mount, exactly when the shared link's loads start.
+    render(
+      <StrictMode>
+        <RouterProvider router={router} />
+      </StrictMode>,
+    );
+
+    await finishLoads();
+    await finishLoads();
+
+    expect(screen.getByRole('treeitem', { selected: true })).toHaveAccessibleName(node.label);
+    expect(loadChildren.mock.calls.map(([folderId]) => folderId)).toEqual(node.ancestorIds);
   });
 
   it('steps through expand and select with browser back and forward', async () => {

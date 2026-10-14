@@ -1,21 +1,12 @@
 import { useCallback, type JSX } from 'react';
-import {
-  createMockFileSystem,
-  DEFAULT_LATENCY_MS,
-  FLAKY_FOLDER_ID,
-  type FileNode,
-} from './api/mockFileSystem';
+import { fileSystem } from './api/fileSystem';
+import type { FileNode } from './api/mockFileSystem';
 import { HighlightedText } from './components/HighlightedText';
 import { useTreeSearch } from './hooks/useTreeSearch';
 import { useTreeUrlState } from './hooks/useTreeUrlState';
 import { isQueryTooShort, MIN_QUERY_LENGTH, type TreeSearchResult } from './model/search';
 import { Tree } from './tree/Tree';
 import './FileTreePage.css';
-
-const fileSystem = createMockFileSystem({
-  latencyMs: DEFAULT_LATENCY_MS,
-  failFirstLoadOf: [FLAKY_FOLDER_ID],
-});
 
 // Module-level accessors are referentially stable, which the tree's row memo relies on.
 const getNodeId = (node: FileNode): string => node.id;
