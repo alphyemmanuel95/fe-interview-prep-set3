@@ -1,0 +1,20 @@
+.tree {
+  --tree-indent: 1.25rem;
+}
+
+.tree__list {
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+}
+
+/* The list itself is only focusable so clicks have a target; rows carry the visible focus. */
+.tree__list:focus {
+  outline: none;
+}
+
+@media (max-width: 30rem) {
+  .tree {
+    --tree-indent: 0.875rem;
+  }
+}

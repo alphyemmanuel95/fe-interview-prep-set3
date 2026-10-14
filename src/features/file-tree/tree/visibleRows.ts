@@ -102,3 +102,21 @@ export function flattenVisibleRows<T>(input: FlattenInput<T>): readonly VisibleR
   visit(input.rootItems, 1, null);
   return rows;
 }
+
+/** Roving tabindex target: the first candidate that is visible, else the first row. */
+export function pickTabStop<T>(
+  rows: readonly VisibleRow<T>[],
+  indexById: ReadonlyMap<string, number>,
+  candidates: readonly (string | null)[],
+): string | null {
+  const visible = candidates.find((id) => id !== null && indexById.has(id));
+  return visible ?? rows[0]?.id ?? null;
+}
+
+/** Text for the tree's polite live region, derived from the rows instead of stored. */
+export function loadStatusMessage<T>(rows: readonly VisibleRow<T>[]): string {
+  if (rows.some((row) => row.kind === 'item' && row.isExpanded && row.loadStatus === 'loading')) {
+    return 'Loading…';
+  }
+  return rows.some((row) => row.kind === 'error') ? 'Some items could not be loaded.' : '';
+}
