@@ -1,0 +1,61 @@
+.month-summary {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.month-summary__heading {
+  margin: 0;
+  font-size: var(--font-size-heading);
+}
+
+.month-summary__scope {
+  margin: calc(-1 * var(--space-2)) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.month-summary__total {
+  display: grid;
+}
+
+.month-summary__total-label {
+  color: var(--color-text-muted);
+}
+
+.month-summary__total-value {
+  font-size: var(--font-size-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.month-summary__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.month-summary__caption {
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  text-align: left;
+}
+
+.month-summary__row {
+  border-top: 1px solid var(--color-border);
+}
+
+.month-summary__category {
+  padding: var(--space-2) 0;
+  font-weight: 400;
+  text-align: left;
+}
+
+.month-summary__amount {
+  padding: var(--space-2) 0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

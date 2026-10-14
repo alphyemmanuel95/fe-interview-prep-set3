@@ -1,0 +1,15 @@
+.expenses-page {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.expenses-page__title {
+  margin: 0;
+}
+
+.expenses-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
