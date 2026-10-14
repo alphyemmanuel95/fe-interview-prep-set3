@@ -1,0 +1,9 @@
+.highlighted-text__match {
+  padding: 0;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-warning) 28%, transparent);
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

@@ -3,7 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../app/routes';
-import { createMockFileSystem, DEFAULT_LATENCY_MS, FLAKY_FOLDER_ID } from './api/mockFileSystem';
+import {
+  createMockFileSystem,
+  DEFAULT_LATENCY_MS,
+  FLAKY_FOLDER_ID,
+  type SearchIndexEntry,
+} from './api/mockFileSystem';
 import { stubScrollIntoView } from './testUtils';
 
 // The generator is seeded, so this copy has exactly the ids the page serves.
@@ -21,12 +26,37 @@ function pickDeepNode() {
   return node;
 }
 
+const isOutsideFlakyFolder = (entry: SearchIndexEntry): boolean =>
+  entry.id !== FLAKY_FOLDER_ID && !entry.ancestorIds.includes(FLAKY_FOLDER_ID);
+const matchesOf = (term: string) =>
+  searchIndex.filter((entry) => entry.label.toLowerCase().includes(term.toLowerCase()));
+
+/** A label with several matches, some nested, none inside the flaky folder. */
+function pickSearchTerm(): string {
+  const term = searchIndex
+    .map((entry) => entry.label)
+    .find((label) => {
+      const matches = matchesOf(label);
+      return (
+        matches.length > 1 &&
+        matches.every(isOutsideFlakyFolder) &&
+        matches.some((match) => match.ancestorIds.length > 1)
+      );
+    });
+  if (term === undefined) {
+    throw new Error('The mock file system has no suitable search term');
+  }
+  return term;
+}
+
 function renderAt(url: string) {
   const router = createMemoryRouter(routes, { initialEntries: [url] });
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
   render(<RouterProvider router={router} />);
   return { router, user };
 }
+
+const MAX_LEVEL = 6;
 
 /** Lets one round of simulated folder requests resolve. */
 async function finishLoads(): Promise<void> {
@@ -92,5 +122,42 @@ describe('FileTreePage', () => {
     await act(() => router.navigate(2));
     expect(firstFolder).toHaveAttribute('aria-selected', 'true');
     expect(firstFolder).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('filters by search while keeping each match’s ancestor folders visible', async () => {
+    const term = pickSearchTerm();
+    const matches = matchesOf(term);
+    const matchIds = new Set(matches.map((match) => match.id));
+    // Folders shown only because a match sits below them (a matching folder counts as a match).
+    const ancestorOnlyIds = new Set(
+      matches.flatMap((match) => match.ancestorIds).filter((id) => !matchIds.has(id)),
+    );
+    const { user } = renderAt('/file-tree');
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search files' }), term);
+    // Ancestor folders load level by level, as they would for a user.
+    for (let level = 1; level < MAX_LEVEL; level += 1) {
+      await finishLoads();
+    }
+
+    const rows = screen.getAllByRole('treeitem');
+    const matchRows = rows.filter((row) => row.textContent.includes(term));
+    const otherRows = rows.filter((row) => !matchRows.includes(row));
+    expect(matchRows).toHaveLength(matches.length);
+    expect(otherRows).toHaveLength(ancestorOnlyIds.size);
+    for (const row of otherRows) {
+      expect(row).toHaveAttribute('aria-expanded', 'true');
+    }
+    expect(screen.queryByRole('treeitem', { name: 'package.json' })).not.toBeInTheDocument();
+    expect(screen.getByText(`${matches.length} matches`)).toBeInTheDocument();
+  });
+
+  it('says so when nothing matches the search', async () => {
+    const { user } = renderAt('/file-tree');
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search files' }), 'no-such-file');
+
+    expect(screen.getByText('No files or folders match “no-such-file”.')).toBeInTheDocument();
+    expect(screen.queryAllByRole('treeitem')).toHaveLength(0);
   });
 });
