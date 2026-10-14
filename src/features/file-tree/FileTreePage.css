@@ -1,0 +1,22 @@
+.file-tree__intro {
+  max-width: 60ch;
+  color: var(--color-text-muted);
+}
+
+.file-tree__panel {
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.file-tree__selection {
+  margin: var(--space-3) 0 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+}
+
+.file-tree__selection code {
+  color: var(--color-text);
+}
