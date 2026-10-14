@@ -25,5 +25,8 @@
 }
 
 .form-field__error::before {
+  /* Empty alt text keeps screen readers from announcing the icon; the first line is the
+     fallback for browsers without alt-text support for content. */
   content: '⚠ ';
+  content: '⚠ ' / '';
 }
