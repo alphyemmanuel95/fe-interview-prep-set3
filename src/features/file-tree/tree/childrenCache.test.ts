@@ -89,6 +89,32 @@ describe('createChildrenCache', () => {
     expect(signal?.aborted).toBe(false);
   });
 
+  it('loads again with a fresh signal after reconnecting', async () => {
+    const cache = createChildrenCache<string>();
+    void cache.load(
+      'root',
+      (firstSignal) =>
+        new Promise<readonly string[]>((_resolve, reject) => {
+          firstSignal.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        }),
+    );
+    cache.connect()();
+    await vi.runAllTimersAsync();
+
+    // e.g. a tree hidden by <Activity> and shown again keeps its state but re-runs effects.
+    cache.connect();
+    let signal: AbortSignal | undefined;
+    await cache.load('root', (nextSignal) => {
+      signal = nextSignal;
+      return Promise.resolve(CHILDREN);
+    });
+
+    expect(signal?.aborted).toBe(false);
+    expect(cache.getSnapshot().get('root')).toMatchObject({ status: 'success' });
+  });
+
   it('aborts in-flight loads after a real disconnect', () => {
     const cache = createChildrenCache<string>();
     let signal: AbortSignal | undefined;

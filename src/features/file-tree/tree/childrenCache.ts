@@ -28,7 +28,8 @@ export function createChildrenCache<T>(): ChildrenCache<T> {
   let snapshot: ChildrenSnapshot<T> = new Map();
   const inFlight = new Map<string, Promise<void>>();
   const listeners = new Set<() => void>();
-  const controller = new AbortController();
+  // Replaced on reconnect after an abort, so a cache reused by a remounted tree can load again.
+  let controller = new AbortController();
   // Increases with every load that settles, so the latest outcome can be announced.
   let settledCount = 0;
   let pendingAbort: ReturnType<typeof setTimeout> | undefined;
@@ -48,14 +49,15 @@ export function createChildrenCache<T>(): ChildrenCache<T> {
   };
 
   const run = async (id: string, fetchChildren: FetchChildren<T>): Promise<void> => {
+    const { signal } = controller;
     setEntry(id, { status: 'loading' });
     try {
-      const children = await fetchChildren(controller.signal);
+      const children = await fetchChildren(signal);
       settledCount += 1;
       setEntry(id, { status: 'success', children, settledOrder: settledCount });
     } catch (error: unknown) {
       // Aborted only when the tree unmounted: forget the entry rather than report a failure.
-      if (controller.signal.aborted) {
+      if (signal.aborted) {
         setEntry(id, null);
         return;
       }
@@ -88,10 +90,15 @@ export function createChildrenCache<T>(): ChildrenCache<T> {
     return request;
   };
 
-  // StrictMode runs disconnect → connect synchronously on mount. Deferring the abort by one task
-  // lets that replay cancel it, so dev mode neither aborts nor re-fetches; a real unmount aborts.
+  // StrictMode replays every mount as mount → unmount → mount, synchronously. Deferring the abort
+  // by one task lets that replayed connect cancel it, so dev mode neither aborts nor re-fetches,
+  // while a real unmount still aborts on the next task. If the tree comes back after the abort
+  // ran (e.g. shown again by <Activity>), it gets a fresh controller instead of a dead one.
   const connect = (): (() => void) => {
     clearTimeout(pendingAbort);
+    if (controller.signal.aborted) {
+      controller = new AbortController();
+    }
     return () => {
       pendingAbort = setTimeout(() => {
         controller.abort();
