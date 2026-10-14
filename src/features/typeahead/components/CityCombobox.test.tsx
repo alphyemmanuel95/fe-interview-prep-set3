@@ -251,7 +251,7 @@ describe('CityCombobox keyboard and mouse', () => {
     expect(input).toHaveValue('Delia Moss');
     expect(input).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(screen.getByText(/Selected:/)).toHaveTextContent('Selected: Delia Moss (Delft)');
+    expect(screen.getByRole('status')).toHaveTextContent('Selected Delia Moss, Delft');
   });
 
   it('does not search for the selected name after a selection', async () => {

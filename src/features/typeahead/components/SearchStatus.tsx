@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { assertNever } from '../../../shared/assertNever';
-import type { CitySearchState } from '../model/types';
+import type { CitySearchState, CitySuggestion } from '../model/types';
 import './SearchStatus.css';
 
 type SearchStatusProps = Readonly<{
@@ -8,6 +8,8 @@ type SearchStatusProps = Readonly<{
   /** The query as the user typed it, quoted back in the empty message. */
   query: string;
   isVisible: boolean;
+  /** A committed selection, announced through the same live region as the search status. */
+  selected: CitySuggestion | null;
   /** False while a newer query is pending, so Retry can't re-run the query being replaced. */
   canRetry: boolean;
   onRetry: () => void;
@@ -30,27 +32,43 @@ function describeStatus(state: CitySearchState, query: string): string {
   }
 }
 
+function toMessage(
+  state: CitySearchState,
+  query: string,
+  isVisible: boolean,
+  selected: CitySuggestion | null,
+): string {
+  if (selected !== null) {
+    return `Selected ${selected.name}, ${selected.city}`;
+  }
+  return isVisible ? describeStatus(state, query) : '';
+}
+
+function messageClassName(isError: boolean, hasSelection: boolean): string {
+  if (isError) {
+    return 'search-status__message search-status__message--error';
+  }
+  if (hasSelection) {
+    return 'search-status__message search-status__message--selected';
+  }
+  return 'search-status__message';
+}
+
 export function SearchStatus({
   state,
   query,
   isVisible,
+  selected,
   canRetry,
   onRetry,
 }: SearchStatusProps): JSX.Element {
   const isError = state.status === 'error';
+  const message = toMessage(state, query, isVisible, selected);
   return (
     <div className="search-status">
       {/* The live region stays mounted and only its text changes, so every update is announced. */}
-      <p
-        role="status"
-        aria-live="polite"
-        className={
-          isError
-            ? 'search-status__message search-status__message--error'
-            : 'search-status__message'
-        }
-      >
-        {isVisible ? describeStatus(state, query) : ''}
+      <p role="status" aria-live="polite" className={messageClassName(isError, selected !== null)}>
+        {message}
       </p>
       {isVisible && canRetry && isError && (
         <button type="button" className="search-status__retry" onClick={onRetry}>

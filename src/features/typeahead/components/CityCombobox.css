@@ -21,7 +21,3 @@
   background: var(--color-surface);
   color: var(--color-text);
 }
-
-.city-combobox__selection {
-  margin: var(--space-4) 0 0;
-}

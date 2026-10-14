@@ -128,14 +128,10 @@ export function CityCombobox(): JSX.Element {
         state={search.state}
         query={debouncedQuery.trim()}
         isVisible={isStatusVisible}
+        selected={state.selected}
         canRetry={!isStale}
         onRetry={handleRetry}
       />
-      {state.selected !== null && (
-        <p className="city-combobox__selection">
-          Selected: <strong>{state.selected.name}</strong> ({state.selected.city})
-        </p>
-      )}
     </div>
   );
 }
