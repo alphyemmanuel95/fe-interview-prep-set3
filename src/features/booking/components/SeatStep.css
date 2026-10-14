@@ -24,3 +24,8 @@
   margin: var(--space-1) 0 0;
   color: var(--color-warning);
 }
+
+.seat-step__selection {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+}

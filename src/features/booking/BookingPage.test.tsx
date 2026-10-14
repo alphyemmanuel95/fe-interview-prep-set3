@@ -145,7 +145,8 @@ describe('BookingPage', () => {
     const { user } = setup();
     await completeEventStep(user);
     await selectSeats(user, ['A1', 'C1']);
-    expect(getSeatSummary()).toHaveTextContent('Total ₹750.00');
+    expect(getSeatSummary()).toHaveTextContent(/^2 of 6 seats selected · Total ₹750\.00$/);
+    expect(screen.getByText('Your seats: A1, C1')).toBeInTheDocument();
     await clickNext(user);
     await user.type(screen.getByLabelText(/seat A1/), 'Asha');
     await user.type(screen.getByLabelText(/seat C1/), 'Chen');

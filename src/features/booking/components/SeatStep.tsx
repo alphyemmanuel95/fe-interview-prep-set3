@@ -33,9 +33,11 @@ export function SeatStep({ seatIds, errors, onSeatToggle }: SeatStepProps): JSX.
       </legend>
       <SeatGrid selectedSeatIds={seatIds} isAtLimit={isAtLimit} onSeatToggle={onSeatToggle} />
       <div className="seat-step__summary" role="status">
+        {/* Only the count and total live here; the toggled seat's own pressed state already
+            announces which seat changed, so repeating the whole list on each click is noise. */}
         <p className="seat-step__count">
-          {seatIds.length} of {MAX_SEATS_PER_BOOKING} seats selected
-          {seatIds.length > 0 && `: ${seatIds.join(', ')}`} · Total {formatPrice(totalCents)}
+          {seatIds.length} of {MAX_SEATS_PER_BOOKING} seats selected · Total{' '}
+          {formatPrice(totalCents)}
         </p>
         {isAtLimit && (
           <p className="seat-step__hint">
@@ -44,6 +46,9 @@ export function SeatStep({ seatIds, errors, onSeatToggle }: SeatStepProps): JSX.
           </p>
         )}
       </div>
+      {seatIds.length > 0 && (
+        <p className="seat-step__selection">Your seats: {seatIds.join(', ')}</p>
+      )}
       <FieldErrorMessage field="seats" message={seatError} />
     </fieldset>
   );
