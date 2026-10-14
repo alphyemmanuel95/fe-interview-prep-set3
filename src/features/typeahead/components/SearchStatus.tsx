@@ -5,7 +5,7 @@ import './SearchStatus.css';
 
 type SearchStatusProps = Readonly<{
   state: CitySearchState;
-  /** The query as the user typed it, quoted back in the empty message. */
+  /** The normalised query that was searched, quoted back in the empty message. */
   query: string;
   isVisible: boolean;
   /** A committed selection, announced through the same live region as the search status. */

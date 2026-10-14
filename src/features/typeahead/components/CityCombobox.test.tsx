@@ -217,10 +217,10 @@ describe('CityCombobox states', () => {
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
 
-  it('shows an empty message quoting the query', async () => {
+  it('shows an empty message quoting the searched query', async () => {
     const { user, input } = setup();
 
-    await user.type(input, 'zzz');
+    await user.type(input, '  ZzZ ');
     await finishTyping();
 
     expect(screen.getByRole('status')).toHaveTextContent("No results for 'zzz'");

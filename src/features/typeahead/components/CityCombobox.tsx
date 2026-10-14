@@ -126,7 +126,7 @@ export function CityCombobox(): JSX.Element {
       </div>
       <SearchStatus
         state={search.state}
-        query={debouncedQuery.trim()}
+        query={normaliseQuery(debouncedQuery)}
         isVisible={isStatusVisible}
         selected={state.selected}
         canRetry={!isStale}
