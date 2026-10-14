@@ -68,6 +68,11 @@ export const isIsoDate = (value: unknown): value is string =>
   !Number.isNaN(Date.parse(value)) &&
   new Date(value).toISOString().slice(0, ISO_DATE_LENGTH) === value;
 
+const isPositiveCents = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
+
+// Checks the same invariants the form enforces, so tampered or stale data can't render a blank
+// row or a negative total.
 const isExpense = (value: unknown): value is Expense =>
   typeof value === 'object' &&
   value !== null &&
@@ -75,8 +80,9 @@ const isExpense = (value: unknown): value is Expense =>
   typeof value.id === 'string' &&
   'title' in value &&
   typeof value.title === 'string' &&
+  value.title.trim() !== '' &&
   'amountCents' in value &&
-  Number.isSafeInteger(value.amountCents) &&
+  isPositiveCents(value.amountCents) &&
   'category' in value &&
   isCategory(value.category) &&
   'date' in value &&

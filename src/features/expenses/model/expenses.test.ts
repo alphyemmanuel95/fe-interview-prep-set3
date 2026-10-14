@@ -126,6 +126,9 @@ describe('guards and dates', () => {
     expect(isExpenseList([lunch, taxi])).toBe(true);
     expect(isExpenseList([{ ...lunch, category: 'Gifts' }])).toBe(false);
     expect(isExpenseList([{ ...lunch, amountCents: 1.5 }])).toBe(false);
+    expect(isExpenseList([{ ...lunch, amountCents: -500 }])).toBe(false);
+    expect(isExpenseList([{ ...lunch, amountCents: 0 }])).toBe(false);
+    expect(isExpenseList([{ ...lunch, title: '   ' }])).toBe(false);
     expect(isExpenseList({ lunch })).toBe(false);
   });
 
