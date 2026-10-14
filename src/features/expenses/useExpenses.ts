@@ -1,5 +1,6 @@
-import { useReducer } from 'react';
-import { type Expense, type ExpenseDraft, expensesReducer } from './expenses';
+import { useEffect, useReducer } from 'react';
+import { loadFromStorage, saveToStorage } from '../../shared/storage';
+import { type Expense, type ExpenseDraft, expensesReducer, isExpenseList } from './expenses';
 
 export type UseExpensesResult = Readonly<{
   expenses: readonly Expense[];
@@ -8,10 +9,23 @@ export type UseExpensesResult = Readonly<{
   deleteExpense: (id: string) => void;
 }>;
 
+const STORAGE_KEY = 'expenses';
+// Bump when the Expense shape changes; older data then falls back to an empty list.
+const STORAGE_VERSION = 1;
 const NO_EXPENSES: readonly Expense[] = [];
 
+const loadExpenses = (): readonly Expense[] =>
+  loadFromStorage(STORAGE_KEY, STORAGE_VERSION, isExpenseList, NO_EXPENSES);
+
 export function useExpenses(): UseExpensesResult {
-  const [expenses, dispatch] = useReducer(expensesReducer, NO_EXPENSES);
+  // Lazy initialiser: storage is read once on mount, not on every render.
+  const [expenses, dispatch] = useReducer(expensesReducer, undefined, loadExpenses);
+
+  // One effect persists every change, whichever action caused it. Writing the same list twice
+  // under StrictMode is harmless.
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY, STORAGE_VERSION, expenses);
+  }, [expenses]);
 
   return {
     expenses,
