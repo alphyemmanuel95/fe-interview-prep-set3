@@ -94,6 +94,12 @@ export const toMonthKey = (date: Date): MonthKey =>
 
 export const toIsoDate = (date: Date): string => `${toMonthKey(date)}-${pad2(date.getDate())}`;
 
+// ISO dates parse as UTC midnight, so formatting in UTC keeps the calendar day from shifting
+// with the viewer's time zone.
+const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' });
+
+export const formatIsoDate = (isoDate: string): string => dateFormatter.format(new Date(isoDate));
+
 // ---- Validation ----
 
 export type ExpenseFormValues = Readonly<{
