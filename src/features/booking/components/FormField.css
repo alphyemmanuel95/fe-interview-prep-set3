@@ -1,0 +1,24 @@
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.form-field__label {
+  font-weight: 600;
+}
+
+.form-field__control {
+  width: 100%;
+  max-width: 24rem;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.form-field__control--invalid {
+  border: 2px solid var(--color-danger);
+}

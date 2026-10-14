@@ -1,0 +1,11 @@
+.field-error {
+  margin: var(--space-1) 0 0;
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* A leading marker so the error is not signalled by colour alone. */
+.field-error::before {
+  content: '! ';
+  font-weight: 700;
+}
