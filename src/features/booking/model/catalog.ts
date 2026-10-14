@@ -21,7 +21,9 @@ export type SeatTier = 'vip' | 'standard';
 
 export const MAX_SEATS_PER_BOOKING = 6;
 
-// Money is held in integer cents (paise) so totals never accumulate floating-point error.
+// Money is held in integer minor units so totals never accumulate floating-point error.
+// "Cents" is the codebase-wide name for a minor unit (standards §4); for INR one cent is one paisa,
+// so 50_000 cents is ₹500.00. Keeping one name means the maths reads the same for any currency.
 export const SEAT_TIERS = {
   vip: { label: 'VIP', priceCents: 50_000 },
   standard: { label: 'Standard', priceCents: 25_000 },

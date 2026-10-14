@@ -24,6 +24,7 @@ export type BookingRequest = Readonly<{
   eventId: EventId;
   date: string;
   attendees: readonly AttendeeBooking[];
+  /** In minor units: paise for INR. */
   totalCents: number;
 }>;
 

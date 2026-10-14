@@ -1,6 +1,7 @@
 import { getSeatTier, SEAT_TIER_ORDER, SEAT_TIERS } from './catalog';
 import type { SeatId, SeatTier } from './catalog';
 
+/** Minor units (paise for INR) per major unit (rupee). */
 const CENTS_PER_UNIT = 100;
 const priceFormatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
 
