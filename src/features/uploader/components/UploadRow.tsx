@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { assertNever } from '../../../shared/assertNever';
 import { formatFileSize } from '../model/format';
 import type { UploadItem } from '../model/uploadQueue';
-import { canRetry, isActive } from '../model/uploadQueue';
+import { canRetry, getRetryDelayMs, isActive } from '../model/uploadQueue';
 import './UploadRow.css';
 
 type UploadRowProps = Readonly<{
@@ -24,7 +24,7 @@ function describeStatus(item: UploadItem): string {
         ? `Uploading ${Math.round(item.progress * PERCENT)}%`
         : 'Uploaded, waiting for the server';
     case 'retrying':
-      return `${item.error}. Retrying in ${item.retryDelayMs / MS_PER_SECOND} s`;
+      return `${item.error}. Retrying in ${(getRetryDelayMs(item.attempt) ?? 0) / MS_PER_SECOND} s`;
     case 'done':
       return 'Uploaded';
     case 'failed':

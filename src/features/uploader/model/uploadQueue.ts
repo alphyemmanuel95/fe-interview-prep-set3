@@ -25,7 +25,9 @@ export type UploadItem = UploadItemBase &
     | Readonly<{ status: 'uploading'; progress: number }>
     // Waiting out a backoff delay. It holds no concurrency slot meanwhile: other files keep
     // uploading, and once the delay passes the item is re-queued in its original position.
-    | Readonly<{ status: 'retrying'; retryDelayMs: number; error: string }>
+    // `retryAt` is an absolute deadline (epoch ms), so a timer can be rescheduled from state at
+    // any time (re-render, effect re-run, reconnect) without restarting the wait.
+    | Readonly<{ status: 'retrying'; retryAt: number; error: string }>
     | Readonly<{ status: 'done' }>
     | Readonly<{ status: 'failed'; error: string }>
     | Readonly<{ status: 'cancelled' }>
@@ -46,7 +48,9 @@ export type UploadQueueAction =
   | Readonly<{ type: 'started'; id: string }>
   | Readonly<{ type: 'progressed'; id: string; progress: number }>
   | Readonly<{ type: 'succeeded'; id: string }>
-  | Readonly<{ type: 'attemptFailed'; id: string; error: string }>
+  | Readonly<{ type: 'attemptFailed'; id: string; error: string; failedAt: number }>
+  // The request was torn down by the hook (unmount, reconnect), not by the user or the server.
+  | Readonly<{ type: 'interrupted'; id: string }>
   | Readonly<{ type: 'retryDue'; id: string }>
   | Readonly<{ type: 'cancelled'; id: string }>
   | Readonly<{ type: 'retryRequested'; id: string }>
@@ -120,12 +124,16 @@ export function selectItemsToStart(
   return queue.filter((item) => item.status === 'queued').slice(0, freeSlots);
 }
 
-function failAttempt(item: UploadItem, error: string): UploadItem {
-  // Attempt n (1-based) failing waits RETRY_DELAYS_MS[n - 1]; past the last delay it gives up.
-  const retryDelayMs = RETRY_DELAYS_MS[item.attempt - 1];
+// Attempt n (1-based) failing waits RETRY_DELAYS_MS[n - 1]; past the last delay it gives up.
+export function getRetryDelayMs(attempt: number): number | undefined {
+  return RETRY_DELAYS_MS[attempt - 1];
+}
+
+function failAttempt(item: UploadItem, error: string, failedAt: number): UploadItem {
+  const retryDelayMs = getRetryDelayMs(item.attempt);
   return retryDelayMs === undefined
     ? { ...toBase(item), status: 'failed', error }
-    : { ...toBase(item), status: 'retrying', retryDelayMs, error };
+    : { ...toBase(item), status: 'retrying', retryAt: failedAt + retryDelayMs, error };
 }
 
 // Transitions return the same object when they don't apply, so late events for an item that has
@@ -141,7 +149,12 @@ function transition(item: UploadItem, action: UploadQueueAction): UploadItem {
     case 'succeeded':
       return item.status === 'uploading' ? { ...toBase(item), status: 'done' } : item;
     case 'attemptFailed':
-      return item.status === 'uploading' ? failAttempt(item, action.error) : item;
+      return item.status === 'uploading' ? failAttempt(item, action.error, action.failedAt) : item;
+    case 'interrupted':
+      // The attempt never finished, so it doesn't count towards the retry budget.
+      return item.status === 'uploading'
+        ? { ...toBase(item), attempt: item.attempt - 1, status: 'queued' }
+        : item;
     case 'retryDue':
       return item.status === 'retrying' ? { ...toBase(item), status: 'queued' } : item;
     case 'cancelled':

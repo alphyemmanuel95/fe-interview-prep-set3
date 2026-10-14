@@ -1,3 +1,4 @@
+import { Activity } from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -240,5 +241,73 @@ describe('UploaderPage', () => {
     expect(transport).toHaveBeenCalledTimes(2 * MAX_ATTEMPTS + 1);
     expect([...keysByFile.values()].map((keys) => keys.size)).toEqual([1, 1]);
     expect(keysByFile.get('file-1.txt')).not.toEqual(keysByFile.get('file-2.txt'));
+  });
+
+  it('clears the backoff timer when a retrying upload is cancelled', async () => {
+    enableDeterministicTimers();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const transport = vi.fn<UploadTransport>(() => Promise.resolve(SERVER_ERROR));
+    render(<UploaderPage transport={transport} />);
+    await user.upload(screen.getByLabelText('Choose files'), createFiles(1));
+    await advanceTime(0);
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole('button', { name: 'Cancel file-1.txt' }));
+    await advanceTime(Math.max(...RETRY_DELAYS_MS));
+
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('restarts interrupted uploads when its effects reconnect', async () => {
+    const user = userEvent.setup();
+    const { transport, uploads, getInFlight } = createControllableTransport();
+    const { rerender } = render(
+      <Activity mode="visible">
+        <UploaderPage transport={transport} />
+      </Activity>,
+    );
+    await user.upload(screen.getByLabelText('Choose files'), createFiles(2));
+    await waitFor(() => {
+      expect(uploads).toHaveLength(2);
+    });
+
+    rerender(
+      <Activity mode="hidden">
+        <UploaderPage transport={transport} />
+      </Activity>,
+    );
+    expect(uploads.every((upload) => upload.request.signal.aborted)).toBe(true);
+    rerender(
+      <Activity mode="visible">
+        <UploaderPage transport={transport} />
+      </Activity>,
+    );
+
+    await waitFor(() => {
+      expect(uploads).toHaveLength(4);
+    });
+    expect(getInFlight()).toBe(2);
+  });
+
+  it('aborts requests and clears timers on unmount', async () => {
+    enableDeterministicTimers();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { transport, uploads } = createControllableTransport();
+    const { unmount } = render(<UploaderPage transport={transport} />);
+    await user.upload(screen.getByLabelText('Choose files'), createFiles(2));
+    await advanceTime(0);
+    act(() => {
+      uploads[0]?.settle(SERVER_ERROR);
+    });
+    await advanceTime(0);
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+    unmount();
+    await advanceTime(Math.max(...RETRY_DELAYS_MS));
+
+    expect(uploads[1]?.request.signal.aborted).toBe(true);
+    expect(uploads).toHaveLength(2);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

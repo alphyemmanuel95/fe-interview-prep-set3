@@ -9,6 +9,8 @@ import {
   uploadQueueReducer,
 } from './uploadQueue';
 
+const FAILED_AT = 1_000_000;
+
 function queued(id: string): UploadItem {
   return {
     id,
@@ -86,12 +88,12 @@ describe('uploadQueueReducer', () => {
   it('backs off 1s, 2s and 4s between attempts, then fails', () => {
     const failOnce: readonly UploadQueueAction[] = [
       { type: 'started', id: 'a' },
-      { type: 'attemptFailed', id: 'a', error: 'Server responded 500' },
+      { type: 'attemptFailed', id: 'a', error: 'Server responded 500', failedAt: FAILED_AT },
     ];
     const retryDelays: number[] = [];
     let queue = reduce([queued('a')], ...failOnce);
     while (queue[0]?.status === 'retrying') {
-      retryDelays.push(queue[0].retryDelayMs);
+      retryDelays.push(queue[0].retryAt - FAILED_AT);
       queue = reduce(queue, { type: 'retryDue', id: 'a' }, ...failOnce);
     }
 
@@ -107,7 +109,7 @@ describe('uploadQueueReducer', () => {
     const failed = reduce(
       [{ ...queued('a'), attempt: MAX_ATTEMPTS - 1 }],
       { type: 'started', id: 'a' },
-      { type: 'attemptFailed', id: 'a', error: 'boom' },
+      { type: 'attemptFailed', id: 'a', error: 'boom', failedAt: FAILED_AT },
     );
     expect(failed[0]?.status).toBe('failed');
 
@@ -118,7 +120,7 @@ describe('uploadQueueReducer', () => {
     const queue = reduce(
       [queued('a')],
       { type: 'started', id: 'a' },
-      { type: 'attemptFailed', id: 'a', error: 'boom' },
+      { type: 'attemptFailed', id: 'a', error: 'boom', failedAt: FAILED_AT },
       { type: 'cancelled', id: 'a' },
     );
 
@@ -134,10 +136,21 @@ describe('uploadQueueReducer', () => {
       { type: 'started', id: 'a' },
       { type: 'started', id: 'b' },
       { type: 'started', id: 'c' },
-      { type: 'attemptFailed', id: 'a', error: 'boom' },
+      { type: 'attemptFailed', id: 'a', error: 'boom', failedAt: FAILED_AT },
     );
 
     expect(selectItemsToStart(queue).map((item) => item.id)).toEqual(['d']);
+  });
+
+  it('re-queues an interrupted upload without spending an attempt', () => {
+    const queue = reduce(
+      [queued('a')],
+      { type: 'started', id: 'a' },
+      { type: 'interrupted', id: 'a' },
+    );
+
+    expect(queue[0]).toEqual(queued('a'));
+    expect(selectItemsToStart(queue).map((item) => item.id)).toEqual(['a']);
   });
 
   it('removes an item', () => {
