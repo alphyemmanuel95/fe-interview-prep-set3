@@ -65,7 +65,8 @@ function TreeItemRowView<T>(props: TreeItemRowProps<T>): JSX.Element {
           {props.renderIcon(item, isExpanded)}
         </span>
       )}
-      <span className="tree-row__label">
+      {/* Labels truncate with an ellipsis on narrow screens; the title shows the full name. */}
+      <span className="tree-row__label" title={props.getLabel(item)}>
         {props.renderLabel === undefined ? props.getLabel(item) : props.renderLabel(item)}
       </span>
       {/* aria-busy + the tree's live region announce this; the text is for sighted users. */}
