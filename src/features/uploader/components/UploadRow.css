@@ -1,0 +1,110 @@
+.upload-row {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+/* Colour reinforces the status text; it never carries the status on its own. */
+.upload-row--uploading {
+  border-left-color: var(--color-primary);
+}
+
+.upload-row--retrying,
+.upload-row--needs-reselect {
+  border-left-color: var(--color-warning);
+}
+
+.upload-row--done {
+  border-left-color: var(--color-success);
+}
+
+.upload-row--failed {
+  border-left-color: var(--color-danger);
+}
+
+.upload-row__header,
+.upload-row__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.upload-row__name {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.upload-row__size {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.upload-row__progress {
+  width: 100%;
+  height: 0.5rem;
+  accent-color: var(--color-primary);
+}
+
+.upload-row--done .upload-row__progress {
+  accent-color: var(--color-success);
+}
+
+.upload-row__status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.upload-row--failed .upload-row__status {
+  color: var(--color-danger);
+}
+
+.upload-row--retrying .upload-row__status,
+.upload-row--needs-reselect .upload-row__status {
+  color: var(--color-warning);
+}
+
+.upload-row__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.upload-row__button {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upload-row__button:hover {
+  background: var(--color-surface-alt);
+}
+
+.upload-row__button--secondary {
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* Comfortable touch targets on small screens. */
+@media (max-width: 40rem) {
+  .upload-row__button {
+    min-height: 2.75rem;
+  }
+}
+
+.upload-row__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.875rem;
+}
