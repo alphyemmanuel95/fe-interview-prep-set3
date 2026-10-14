@@ -98,4 +98,24 @@ describe('bookingReducer', () => {
     expect(state.draft).toEqual(EMPTY_DRAFT);
     expect(state.submission).toEqual({ status: 'success', confirmation });
   });
+
+  it('ignores navigation while a submit is in flight', () => {
+    const submitting = reduce(createBookingState({ ...EMPTY_DRAFT, step: 'review' }), [
+      { type: 'submitStarted' },
+    ]);
+
+    expect(bookingReducer(submitting, { type: 'backRequested' })).toBe(submitting);
+    expect(bookingReducer(submitting, { type: 'stepRequested', step: 'seats' })).toBe(submitting);
+  });
+
+  it('drops a failed submit’s error when the user goes back to edit', () => {
+    const state = reduce(createBookingState({ ...EMPTY_DRAFT, step: 'review' }), [
+      { type: 'submitStarted' },
+      { type: 'submitFailed', error: 'Network down' },
+      { type: 'stepRequested', step: 'seats' },
+    ]);
+
+    expect(state.draft.step).toBe('seats');
+    expect(state.submission).toEqual({ status: 'idle' });
+  });
 });
