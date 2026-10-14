@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { UploadOutcome, UploadRequest, UploadTransport } from './api/uploadTransport';
 import { saveQueue } from './model/persistence';
-import { MAX_ATTEMPTS, RETRY_DELAYS_MS } from './model/uploadQueue';
+import { MAX_ATTEMPTS, MAX_CONCURRENT_UPLOADS, RETRY_DELAYS_MS } from './model/uploadQueue';
 import { UploaderPage } from './UploaderPage';
 
 type PendingUpload = Readonly<{
@@ -64,6 +64,39 @@ async function advanceTime(ms: number): Promise<void> {
 describe('UploaderPage', () => {
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it(`never runs more than ${MAX_CONCURRENT_UPLOADS} of 7 uploads at once`, async () => {
+    const user = userEvent.setup();
+    const { transport, uploads, getInFlight, getMaxInFlight } = createControllableTransport();
+    const files = createFiles(7);
+    render(<UploaderPage transport={transport} />);
+
+    await user.upload(screen.getByLabelText('Choose files'), files);
+
+    await waitFor(() => {
+      expect(uploads).toHaveLength(MAX_CONCURRENT_UPLOADS);
+    });
+    expect(screen.getByText('3 uploading, 4 queued.')).toBeInTheDocument();
+
+    // Finish uploads one at a time: each completion frees exactly one slot for the next file.
+    for (const [index, file] of files.entries()) {
+      act(() => {
+        uploads[index]?.settle({
+          kind: 'success',
+          file: { id: `id-${index}`, name: file.name, size: file.size, duplicate: false },
+        });
+      });
+      const expectedStarted = Math.min(files.length, index + 1 + MAX_CONCURRENT_UPLOADS);
+      await waitFor(() => {
+        expect(uploads).toHaveLength(expectedStarted);
+      });
+      expect(getInFlight()).toBeLessThanOrEqual(MAX_CONCURRENT_UPLOADS);
+    }
+
+    expect(await screen.findByText('7 done.')).toBeInTheDocument();
+    expect(getMaxInFlight()).toBe(MAX_CONCURRENT_UPLOADS);
+    expect(uploads.map(nameOf)).toEqual(files.map((file) => file.name));
   });
 
   it('queues files dropped on the drop zone', async () => {
