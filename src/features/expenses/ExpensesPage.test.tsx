@@ -109,7 +109,7 @@ describe('ExpensesPage', () => {
     unmount();
     renderPage(`${pathname}${search}`);
 
-    const list = screen.getByRole('list', { name: 'Expenses' });
+    const list = within(screen.getByRole('region', { name: 'Expenses' })).getByRole('list');
     expect(within(list).getByText('Lunch')).toBeInTheDocument();
     expect(within(list).queryByText('Taxi')).not.toBeInTheDocument();
     expect(within(filters()).getByLabelText('Month')).toHaveValue('2026-10');

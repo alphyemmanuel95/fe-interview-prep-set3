@@ -28,7 +28,7 @@ export function ExpenseList({
       {expenses.length === 0 ? (
         <p className="expense-list__empty">No expenses match the current filters.</p>
       ) : (
-        <ul className="expense-list__items" aria-labelledby={headingId}>
+        <ul className="expense-list__items">
           {expenses.map((expense) => {
             const isEditing = expense.id === editingId;
             return (
