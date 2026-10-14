@@ -62,28 +62,44 @@ export function SeatGrid({ selectedSeatIds, isAtLimit, onSeatToggle }: SeatGridP
 
   return (
     <div className="seat-grid">
-      <ul className="seat-grid__legend" aria-label="Seat key">
-        <li className="seat-grid__legend-item">
-          <span className="seat-grid__seat seat-grid__seat--available" aria-hidden="true" />
-          Available
-        </li>
-        <li className="seat-grid__legend-item">
-          <span className="seat-grid__seat seat-grid__seat--selected" aria-hidden="true" />
-          Selected
-        </li>
-        <li className="seat-grid__legend-item">
-          <span className="seat-grid__seat seat-grid__seat--booked" aria-hidden="true" />
-          Booked
-        </li>
-        <li className="seat-grid__legend-item">
-          <span className="seat-grid__seat seat-grid__seat--vip" aria-hidden="true" />
-          VIP rows A–B, {formatPrice(SEAT_TIERS.vip.priceCents)}
-        </li>
-        <li className="seat-grid__legend-item">
-          <span className="seat-grid__seat seat-grid__seat--standard" aria-hidden="true" />
-          Rows C–F, {formatPrice(SEAT_TIERS.standard.priceCents)}
-        </li>
-      </ul>
+      {/* Two keys, because a seat has a status and a price tier. Mixing them made "Available" and
+          "Rows C–F" look identical. */}
+      <div className="seat-grid__keys">
+        <div className="seat-grid__key">
+          <p id="seat-key-status" className="seat-grid__key-title">
+            Status
+          </p>
+          <ul className="seat-grid__legend" aria-labelledby="seat-key-status">
+            <li className="seat-grid__legend-item">
+              <span className="seat-grid__seat seat-grid__seat--available" aria-hidden="true" />
+              Available
+            </li>
+            <li className="seat-grid__legend-item">
+              <span className="seat-grid__seat seat-grid__seat--selected" aria-hidden="true" />
+              Selected
+            </li>
+            <li className="seat-grid__legend-item">
+              <span className="seat-grid__seat seat-grid__seat--booked" aria-hidden="true" />
+              Booked
+            </li>
+          </ul>
+        </div>
+        <div className="seat-grid__key">
+          <p id="seat-key-price" className="seat-grid__key-title">
+            Price per seat
+          </p>
+          <ul className="seat-grid__legend" aria-labelledby="seat-key-price">
+            <li className="seat-grid__legend-item">
+              <span className="seat-grid__seat seat-grid__seat--vip" aria-hidden="true" />
+              VIP, rows A–B: {formatPrice(SEAT_TIERS.vip.priceCents)}
+            </li>
+            <li className="seat-grid__legend-item">
+              <span className="seat-grid__seat seat-grid__seat--standard" aria-hidden="true" />
+              Standard, rows C–F: {formatPrice(SEAT_TIERS.standard.priceCents)}
+            </li>
+          </ul>
+        </div>
+      </div>
       <p className="seat-grid__stage" aria-hidden="true">
         Stage
       </p>

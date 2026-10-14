@@ -6,6 +6,20 @@
   gap: var(--space-4);
 }
 
+.seat-grid__keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+}
+
+.seat-grid__key-title {
+  margin: 0 0 var(--space-1);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
 .seat-grid__legend {
   display: flex;
   flex-wrap: wrap;
@@ -85,10 +99,25 @@ button.seat-grid__seat {
   cursor: pointer;
 }
 
-/* VIP is signalled by a thicker gold border as well as the row label and the seat's name. */
+/* VIP is signalled by a star and a thicker gold border, not by colour alone, as well as by the
+   row label and the seat's accessible name. */
 .seat-grid__seat--vip {
   border-color: var(--seat-vip);
   border-width: 3px;
+}
+
+.seat-grid__seat--vip::before {
+  content: '★' / '';
+  position: absolute;
+  top: 0;
+  left: 0.15rem;
+  color: var(--seat-vip);
+  font-size: 0.625rem;
+  line-height: 1;
+}
+
+.seat-grid__seat--selected.seat-grid__seat--vip::before {
+  color: var(--color-on-primary);
 }
 
 .seat-grid__seat--selected {
