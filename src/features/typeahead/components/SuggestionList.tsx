@@ -40,6 +40,8 @@ export function SuggestionList({
             key={suggestion.id}
             id={toOptionId(id, suggestion.id)}
             role="option"
+            // Explicit name so assistive tech hears "Name, City" rather than the run-together segments.
+            aria-label={`${suggestion.name}, ${suggestion.city}`}
             aria-selected={isActive}
             tabIndex={-1}
             className={

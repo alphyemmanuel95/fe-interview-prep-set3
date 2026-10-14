@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { Fragment, type JSX } from 'react';
 import { splitByMatch } from '../model/highlight';
 import './HighlightedText.css';
 
@@ -16,7 +16,7 @@ export function HighlightedText({ text, query }: HighlightedTextProps): JSX.Elem
             {segment.text}
           </mark>
         ) : (
-          <span key={segment.start}>{segment.text}</span>
+          <Fragment key={segment.start}>{segment.text}</Fragment>
         ),
       )}
     </>
