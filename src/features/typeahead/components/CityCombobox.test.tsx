@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
+import { StrictMode, type ReactElement } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SEARCH_DEBOUNCE_MS } from '../model/constants';
@@ -49,9 +50,9 @@ type SetupResult = Readonly<{
   unmount: () => void;
 }>;
 
-function setup(): SetupResult {
+function setup(ui: ReactElement = <CityCombobox />): SetupResult {
   const user = userEvent.setup(USER_EVENT_OPTIONS);
-  const { unmount } = render(<CityCombobox />);
+  const { unmount } = render(ui);
   return {
     user,
     input: screen.getByRole('combobox', { name: 'Search people by name or city' }),
@@ -112,6 +113,24 @@ describe('CityCombobox search', () => {
     expect(screen.getAllByRole('option')).toHaveLength(3);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls.map(([request]) => searchTermOf(request))).toEqual(['del', 'delh']);
+  });
+
+  it('sends the same requests under StrictMode', async () => {
+    const { user, input } = setup(
+      <StrictMode>
+        <CityCombobox />
+      </StrictMode>,
+    );
+
+    await user.type(input, 'del');
+    await finishTyping();
+    await user.type(input, 'h');
+    await finishTyping();
+    await user.type(input, '{Backspace}');
+    await finishTyping();
+
+    expect(fetchMock.mock.calls.map(([request]) => searchTermOf(request))).toEqual(['del', 'delh']);
+    expect(screen.getAllByRole('option')).toHaveLength(3);
   });
 
   it('debounces a typing burst into a single request', async () => {
