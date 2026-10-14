@@ -1,4 +1,4 @@
-import { type JSX, useId, useMemo, useRef, useState } from 'react';
+import { type JSX, useId, useRef, useState } from 'react';
 import {
   ALL_CATEGORIES,
   CATEGORIES,
@@ -23,13 +23,10 @@ export function ExpensesPage(): JSX.Element {
   const filterId = useId();
 
   // Totals are derived from the expense list, never stored beside it: with a single source of
-  // truth, an add, edit or delete cannot leave a stale total behind. useMemo only skips the
-  // recomputation on renders that change neither input, such as starting an edit.
-  const monthTotals = useMemo(() => selectMonthTotals(expenses, month), [expenses, month]);
-  const visibleExpenses = useMemo(
-    () => selectVisibleExpenses(expenses, { month, category }),
-    [expenses, month, category],
-  );
+  // truth, an add, edit or delete cannot leave a stale total behind. Recomputing a few hundred
+  // rows per render is cheap and no memoised child depends on these references, so no useMemo.
+  const monthTotals = selectMonthTotals(expenses, month);
+  const visibleExpenses = selectVisibleExpenses(expenses, { month, category });
 
   // Only the id is stored, so the form always edits the current version of the expense
   // and falls back to "add" by itself if that expense is deleted.
