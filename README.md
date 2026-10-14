@@ -4,7 +4,7 @@ Five React + TypeScript features, each shipped as its own branch, pull request a
 
 | #   | Question                | Route        | PR link |
 | --- | ----------------------- | ------------ | ------- |
-| 1   | Expense Tracker         | `/expenses`  |         |
+| 1   | Expense Tracker         | `/expenses`  | [#6](https://github.com/alphyemmanuel95/fe-interview-prep-set3/pull/6) |
 | 2   | City Typeahead          | `/typeahead` |         |
 | 3   | Event Booking Form      | `/booking`   |         |
 | 4   | File Explorer Tree      | `/file-tree` |         |
