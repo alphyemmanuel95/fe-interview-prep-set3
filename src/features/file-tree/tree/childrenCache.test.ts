@@ -53,6 +53,26 @@ describe('createChildrenCache', () => {
     });
   });
 
+  it('retries a loader that threw synchronously', async () => {
+    const cache = createChildrenCache<string>();
+    const fetchChildren = vi
+      .fn<() => Promise<readonly string[]>>()
+      .mockImplementationOnce(() => {
+        throw new Error('Bad request');
+      })
+      .mockResolvedValueOnce(CHILDREN);
+
+    await cache.load('root', fetchChildren);
+    expect(cache.getSnapshot().get('root')).toMatchObject({
+      status: 'error',
+      error: 'Bad request',
+    });
+
+    await cache.load('root', fetchChildren);
+    expect(fetchChildren).toHaveBeenCalledTimes(2);
+    expect(cache.getSnapshot().get('root')).toMatchObject({ status: 'success' });
+  });
+
   it('keeps loads alive across a StrictMode disconnect/connect replay', () => {
     const cache = createChildrenCache<string>();
     let signal: AbortSignal | undefined;

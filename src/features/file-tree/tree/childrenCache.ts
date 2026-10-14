@@ -65,8 +65,6 @@ export function createChildrenCache<T>(): ChildrenCache<T> {
         settledOrder: settledCount,
         error: error instanceof Error ? error.message : UNKNOWN_ERROR,
       });
-    } finally {
-      inFlight.delete(id);
     }
   };
 
@@ -78,7 +76,14 @@ export function createChildrenCache<T>(): ChildrenCache<T> {
     if (snapshot.get(id)?.status === 'success') {
       return Promise.resolve();
     }
-    const request = run(id, fetchChildren);
+    // `run` can settle synchronously (a loader that throws before returning a promise). Clearing
+    // the entry in `.finally` — always a later microtask — and only if it is still this request
+    // guarantees the cleanup never runs before `set`, which would cache a settled promise forever.
+    const request = run(id, fetchChildren).finally(() => {
+      if (inFlight.get(id) === request) {
+        inFlight.delete(id);
+      }
+    });
     inFlight.set(id, request);
     return request;
   };
