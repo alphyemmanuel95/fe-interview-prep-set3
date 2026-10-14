@@ -53,20 +53,22 @@ export function ExpenseList({
                   <button
                     type="button"
                     className="expense-list__button"
+                    aria-label={`Edit ${expense.title}`}
                     onClick={() => {
                       onEdit(expense.id);
                     }}
                   >
-                    Edit<span className="visually-hidden"> {expense.title}</span>
+                    Edit
                   </button>
                   <button
                     type="button"
                     className="expense-list__button expense-list__button--danger"
+                    aria-label={`Delete ${expense.title}`}
                     onClick={() => {
                       onDelete(expense.id);
                     }}
                   >
-                    Delete<span className="visually-hidden"> {expense.title}</span>
+                    Delete
                   </button>
                 </div>
               </li>
