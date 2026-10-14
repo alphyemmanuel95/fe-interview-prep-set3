@@ -1,5 +1,6 @@
-import type { JSX, Ref } from 'react';
-import type { FieldError } from '../model/types';
+import type { JSX, MouseEvent, Ref } from 'react';
+import type { BookingField, FieldError } from '../model/types';
+import { getFieldId } from './fieldIds';
 import './ErrorSummary.css';
 
 type ErrorSummaryProps = Readonly<{
@@ -7,6 +8,13 @@ type ErrorSummaryProps = Readonly<{
   /** The page focuses the summary after a blocked "Next"; the summary never focuses itself. */
   ref: Ref<HTMLElement>;
 }>;
+
+// A plain fragment link only scrolls; it doesn't reliably move focus into the control, and the
+// hash would also go through the router. Focus the field directly instead (GOV.UK pattern).
+function focusField(clickEvent: MouseEvent<HTMLAnchorElement>, field: BookingField): void {
+  clickEvent.preventDefault();
+  document.getElementById(getFieldId(field))?.focus();
+}
 
 // No role="alert": focus moves here after a blocked Next, which already makes screen readers read
 // it. A live region on top would announce the same content twice.
@@ -23,7 +31,17 @@ export function ErrorSummary({ errors, ref }: ErrorSummaryProps): JSX.Element {
       </h3>
       <ul className="error-summary__list">
         {errors.map((error) => (
-          <li key={error.field}>{error.message}</li>
+          <li key={error.field}>
+            <a
+              href={`#${getFieldId(error.field)}`}
+              className="error-summary__link"
+              onClick={(clickEvent) => {
+                focusField(clickEvent, error.field);
+              }}
+            >
+              {error.message}
+            </a>
+          </li>
         ))}
       </ul>
     </section>

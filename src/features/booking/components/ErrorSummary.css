@@ -17,3 +17,8 @@
   margin: 0;
   padding-left: var(--space-5);
 }
+
+.error-summary__link {
+  color: var(--color-danger);
+  font-weight: 600;
+}

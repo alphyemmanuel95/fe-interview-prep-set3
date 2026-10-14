@@ -79,6 +79,9 @@ describe('BookingPage', () => {
     expect(getStepHeading()).toHaveTextContent('Event & date');
     expect(screen.getByLabelText('Event')).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByLabelText('Event')).toHaveAccessibleDescription('Error: Choose an event.');
+
+    await user.click(within(summary).getByRole('link', { name: 'Choose a date.' }));
+    expect(screen.getByLabelText('Date')).toHaveFocus();
   });
 
   it('keeps focus in the field while the error summary disappears and returns', async () => {
@@ -116,7 +119,10 @@ describe('BookingPage', () => {
     await completeEventStep(user);
 
     await clickNext(user);
-    expect(getErrorSummary()).toHaveTextContent('Choose at least 1 seat.');
+    await user.click(
+      within(getErrorSummary()).getByRole('link', { name: 'Choose at least 1 seat.' }),
+    );
+    expect(screen.getByRole('group', { name: /Choose 1 to 6 seats/ })).toHaveFocus();
 
     expect(getSeat('A4')).toBeDisabled();
     await selectSeats(user, ['A1', 'A2', 'A3', 'A6', 'A7', 'A8']);

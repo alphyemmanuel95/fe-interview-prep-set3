@@ -5,7 +5,7 @@ import { formatPrice, getPriceBreakdown } from '../model/pricing';
 import type { FieldError } from '../model/types';
 import { findFieldError } from '../model/validation';
 import { FieldErrorMessage } from './FieldErrorMessage';
-import { getErrorId } from './fieldIds';
+import { getErrorId, getFieldId } from './fieldIds';
 import { SeatGrid } from './SeatGrid';
 import './SeatStep.css';
 
@@ -22,6 +22,9 @@ export function SeatStep({ seatIds, errors, onSeatToggle }: SeatStepProps): JSX.
 
   return (
     <fieldset
+      id={getFieldId('seats')}
+      // Focus target for the error summary link; not in the tab order.
+      tabIndex={-1}
       className="seat-step"
       aria-describedby={seatError === undefined ? undefined : getErrorId('seats')}
     >
