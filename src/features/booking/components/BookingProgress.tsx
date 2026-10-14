@@ -30,7 +30,12 @@ export function BookingProgress({ currentStep, isComplete }: BookingProgressProp
             </span>
             <span className="booking-progress__label">
               {STEP_LABELS[step]}
-              {stepState === 'complete' && <span className="visually-hidden"> (completed)</span>}
+              {stepState === 'complete' && (
+                <>
+                  {' '}
+                  <span className="visually-hidden">(completed)</span>
+                </>
+              )}
             </span>
           </li>
         );
