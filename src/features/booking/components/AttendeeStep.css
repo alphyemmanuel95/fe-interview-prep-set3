@@ -1,0 +1,12 @@
+.attendee-step__intro {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.attendee-step__list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

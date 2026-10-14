@@ -1,0 +1,4 @@
+.event-step {
+  display: grid;
+  gap: var(--space-4);
+}

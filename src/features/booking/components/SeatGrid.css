@@ -1,0 +1,192 @@
+.seat-grid {
+  --seat-size: 2.75rem;
+  --seat-vip: var(--color-warning);
+  --seat-row-label-width: 1.5rem;
+  --seat-swatch-size: 1.5rem;
+  --seat-border-width: 2px;
+  --seat-vip-border-width: 3px;
+  --seat-mark-size: 0.625rem;
+  --seat-check-size: 1rem;
+  --seat-check-offset-top: -0.45rem;
+  --seat-check-offset-right: -0.35rem;
+  --seat-stripe-width: 4px;
+  --seat-stripe-gap: 2px;
+  --seat-unavailable-opacity: 0.45;
+
+  display: grid;
+  gap: var(--space-4);
+}
+
+.seat-grid__keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+}
+
+.seat-grid__key-title {
+  margin: 0 0 var(--space-1);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.seat-grid__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.seat-grid__legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.seat-grid__legend-item .seat-grid__seat {
+  width: var(--seat-swatch-size);
+  height: var(--seat-swatch-size);
+}
+
+.seat-grid__stage {
+  margin: 0;
+  padding: var(--space-1);
+  border-radius: var(--radius);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.seat-grid__rows {
+  display: grid;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+/* Row label, 4 seats, an aisle, 4 seats. Columns shrink so all 8 seats fit a phone screen. */
+.seat-grid__row {
+  display: grid;
+  grid-template-columns:
+    var(--seat-row-label-width) repeat(4, minmax(0, var(--seat-size)))
+    var(--space-3) [after-aisle] repeat(4, minmax(0, var(--seat-size)));
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.seat-grid__row-label {
+  font-weight: 700;
+  text-align: center;
+}
+
+.seat-grid__seat--after-aisle {
+  grid-column-start: after-aisle;
+}
+
+.seat-grid__seat {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border: var(--seat-border-width) solid var(--color-border);
+  /* Rounded back, flatter front: reads as a seat facing the stage. */
+  border-radius: var(--radius) var(--radius) calc(var(--radius) / 2) calc(var(--radius) / 2);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+button.seat-grid__seat {
+  cursor: pointer;
+}
+
+/* VIP is signalled by a star and a thicker gold border, not by colour alone, as well as by the
+   row label and the seat's accessible name. */
+.seat-grid__seat--vip {
+  border-color: var(--seat-vip);
+  border-width: var(--seat-vip-border-width);
+}
+
+.seat-grid__seat--vip::before {
+  content: '★' / '';
+  position: absolute;
+  top: 0;
+  left: var(--space-1);
+  color: var(--seat-vip);
+  font-size: var(--seat-mark-size);
+  line-height: 1;
+}
+
+.seat-grid__seat--selected.seat-grid__seat--vip::before {
+  color: var(--color-on-primary);
+}
+
+.seat-grid__seat--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* Selecting a VIP seat must not hide that it is VIP: keep the gold border on the blue fill. */
+.seat-grid__seat--selected.seat-grid__seat--vip {
+  border-color: var(--seat-vip);
+}
+
+.seat-grid__seat--selected::after {
+  content: '✓' / '';
+  position: absolute;
+  top: var(--seat-check-offset-top);
+  right: var(--seat-check-offset-right);
+  display: grid;
+  place-items: center;
+  width: var(--seat-check-size);
+  height: var(--seat-check-size);
+  border-radius: 50%;
+  background: var(--color-success);
+  color: var(--color-on-primary);
+  font-size: var(--seat-mark-size);
+}
+
+.seat-grid__seat--booked {
+  border-style: dashed;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-surface-alt),
+    var(--color-surface-alt) var(--seat-stripe-width),
+    var(--color-border) var(--seat-stripe-width),
+    var(--color-border) calc(var(--seat-stripe-width) + var(--seat-stripe-gap))
+  );
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+button.seat-grid__seat:disabled {
+  cursor: not-allowed;
+}
+
+button.seat-grid__seat--available:disabled {
+  opacity: var(--seat-unavailable-opacity);
+}
+
+button.seat-grid__seat--available:not(:disabled):hover {
+  background: var(--color-surface-alt);
+}
+
+@media (max-width: 40rem) {
+  .seat-grid {
+    --seat-check-size: 0.8rem;
+    --seat-check-offset-top: -0.35rem;
+    --seat-check-offset-right: -0.25rem;
+  }
+}

@@ -1,0 +1,31 @@
+.seat-step {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.seat-step__legend {
+  margin-bottom: var(--space-4);
+  padding: 0;
+  color: var(--color-text-muted);
+}
+
+.seat-step__summary {
+  margin-top: var(--space-4);
+}
+
+.seat-step__count {
+  margin: 0;
+  font-weight: 600;
+}
+
+.seat-step__hint {
+  margin: var(--space-1) 0 0;
+  color: var(--color-warning);
+}
+
+.seat-step__selection {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+}

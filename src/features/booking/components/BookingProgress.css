@@ -1,0 +1,63 @@
+.booking-progress {
+  --progress-bar-width: 4px;
+  --progress-marker-size: 1.75rem;
+  --progress-marker-border-width: 2px;
+
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.booking-progress__step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: var(--progress-bar-width) solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.booking-progress__step--complete {
+  border-top-color: var(--color-success);
+  color: var(--color-text);
+}
+
+.booking-progress__step--current {
+  border-top-color: var(--color-primary);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.booking-progress__marker {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--progress-marker-size);
+  height: var(--progress-marker-size);
+  border: var(--progress-marker-border-width) solid currentColor;
+  border-radius: 50%;
+  font-size: 0.875rem;
+}
+
+.booking-progress__step--current .booking-progress__marker {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.booking-progress__step--complete .booking-progress__marker {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+@media (max-width: 40rem) {
+  .booking-progress__step {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    font-size: 0.8125rem;
+  }
+}
