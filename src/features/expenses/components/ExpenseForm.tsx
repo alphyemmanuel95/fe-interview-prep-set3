@@ -11,6 +11,7 @@ import {
   validateExpense,
 } from '../model/expenses';
 import { centsToAmountInput } from '../model/money';
+import { FormField } from './FormField';
 import './ExpenseForm.css';
 
 export type ExpenseFormProps = Readonly<{
@@ -86,19 +87,6 @@ export function ExpenseForm({ expense, onSave, onCancel }: ExpenseFormProps): JS
   }
 
   const fieldId = (field: keyof ExpenseFormValues): string => `${id}-${field}`;
-  const errorId = (field: ExpenseFormField): string => `${fieldId(field)}-error`;
-  const errorProps = (
-    field: ExpenseFormField,
-  ): { 'aria-invalid': boolean; 'aria-describedby'?: string } =>
-    errors[field] === undefined
-      ? { 'aria-invalid': false }
-      : { 'aria-invalid': true, 'aria-describedby': errorId(field) };
-  const renderError = (field: ExpenseFormField): JSX.Element | null =>
-    errors[field] === undefined ? null : (
-      <p id={errorId(field)} className="expense-form__error">
-        {errors[field]}
-      </p>
-    );
 
   return (
     <form
@@ -111,78 +99,76 @@ export function ExpenseForm({ expense, onSave, onCancel }: ExpenseFormProps): JS
         {isEditing ? 'Edit expense' : 'Add expense'}
       </h2>
 
-      <div className="expense-form__field">
-        <label htmlFor={fieldId('title')}>Title</label>
-        <input
-          ref={titleRef}
-          id={fieldId('title')}
-          className="expense-form__input"
-          type="text"
-          autoComplete="off"
-          value={values.title}
-          onChange={(event) => {
-            updateValue('title', event.target.value);
-          }}
-          {...errorProps('title')}
-        />
-        {renderError('title')}
-      </div>
+      <FormField id={fieldId('title')} label="Title" error={errors.title}>
+        {(controlProps) => (
+          <input
+            {...controlProps}
+            ref={titleRef}
+            className="form-field__control"
+            type="text"
+            autoComplete="off"
+            value={values.title}
+            onChange={(event) => {
+              updateValue('title', event.target.value);
+            }}
+          />
+        )}
+      </FormField>
 
-      <div className="expense-form__field">
-        <label htmlFor={fieldId('amount')}>Amount</label>
-        <input
-          ref={amountRef}
-          id={fieldId('amount')}
-          className="expense-form__input"
-          type="text"
-          inputMode="decimal"
-          autoComplete="off"
-          placeholder="0.00"
-          value={values.amount}
-          onChange={(event) => {
-            updateValue('amount', event.target.value);
-          }}
-          {...errorProps('amount')}
-        />
-        {renderError('amount')}
-      </div>
+      <FormField id={fieldId('amount')} label="Amount" error={errors.amount}>
+        {(controlProps) => (
+          <input
+            {...controlProps}
+            ref={amountRef}
+            className="form-field__control"
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            placeholder="0.00"
+            value={values.amount}
+            onChange={(event) => {
+              updateValue('amount', event.target.value);
+            }}
+          />
+        )}
+      </FormField>
 
-      <div className="expense-form__field">
-        <label htmlFor={fieldId('category')}>Category</label>
-        <select
-          id={fieldId('category')}
-          className="expense-form__input"
-          value={values.category}
-          onChange={(event) => {
-            const { value } = event.target;
-            if (isCategory(value)) {
-              updateValue('category', value);
-            }
-          }}
-        >
-          {CATEGORIES.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-      </div>
+      <FormField id={fieldId('category')} label="Category" error={undefined}>
+        {(controlProps) => (
+          <select
+            {...controlProps}
+            className="form-field__control"
+            value={values.category}
+            onChange={(event) => {
+              const { value } = event.target;
+              if (isCategory(value)) {
+                updateValue('category', value);
+              }
+            }}
+          >
+            {CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        )}
+      </FormField>
 
-      <div className="expense-form__field">
-        <label htmlFor={fieldId('date')}>Date</label>
-        <input
-          ref={dateRef}
-          id={fieldId('date')}
-          className="expense-form__input"
-          type="date"
-          value={values.date}
-          onChange={(event) => {
-            updateValue('date', event.target.value);
-          }}
-          {...errorProps('date')}
-        />
-        {renderError('date')}
-      </div>
+      <FormField id={fieldId('date')} label="Date" error={errors.date}>
+        {(controlProps) => (
+          <input
+            {...controlProps}
+            ref={dateRef}
+            className="form-field__control"
+            type="date"
+            value={values.date}
+            onChange={(event) => {
+              updateValue('date', event.target.value);
+            }}
+          />
+        )}
+      </FormField>
 
       <div className="expense-form__actions">
         <button type="submit" className="expense-form__button expense-form__button--primary">
