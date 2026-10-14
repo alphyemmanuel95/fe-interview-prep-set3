@@ -117,6 +117,10 @@ export function Tree<T>(props: TreeProps<T>): JSX.Element {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    // Leave shortcuts alone: Alt+Left/Right is browser Back/Forward, which this tree relies on.
+    if (event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
     const activeIndex = tabStopId === null ? -1 : (indexById.get(tabStopId) ?? -1);
     const action = getTreeKeyAction(rows, activeIndex, event.key);
     if (action !== null) {

@@ -123,6 +123,18 @@ describe('Tree', () => {
     expect(item('Ada (CEO)')).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('leaves modified arrow keys to the browser', async () => {
+    const { user, item } = renderOrgChart(resolvingLoader());
+
+    await user.tab();
+    await user.keyboard('{ArrowRight}');
+    await screen.findByRole('treeitem', { name: 'Grace (CTO)' });
+    await user.keyboard('{Alt>}{ArrowLeft}{/Alt}{Control>}{ArrowDown}{/Control}');
+
+    expect(item('Ada (CEO)')).toHaveAttribute('aria-expanded', 'true');
+    expect(item('Ada (CEO)')).toHaveFocus();
+  });
+
   it('selects the focused row with Enter and keeps a single tab stop', async () => {
     const { user, item } = renderOrgChart(resolvingLoader());
 
