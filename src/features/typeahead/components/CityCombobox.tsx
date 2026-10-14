@@ -1,4 +1,4 @@
-import { useId, useReducer, type ChangeEvent, type JSX, type KeyboardEvent } from 'react';
+import { useId, useReducer, useRef, type ChangeEvent, type JSX, type KeyboardEvent } from 'react';
 import { useCitySearch } from '../hooks/useCitySearch';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { comboboxReducer, initialComboboxState } from '../model/comboboxReducer';
@@ -6,6 +6,7 @@ import { SEARCH_DEBOUNCE_MS } from '../model/constants';
 import { normaliseQuery } from '../model/normaliseQuery';
 import { toOptionId } from '../model/optionId';
 import type { CitySuggestion } from '../model/types';
+import { SearchStatus } from './SearchStatus';
 import { SuggestionList } from './SuggestionList';
 import './CityCombobox.css';
 
@@ -21,12 +22,15 @@ export function CityCombobox(): JSX.Element {
   const inputId = useId();
   const labelId = useId();
   const listboxId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const hasQuery = normaliseQuery(state.inputValue) !== '';
   const isPopupOpen = state.isOpen && hasQuery;
   const suggestions =
     search.state.status === 'success' ? search.state.suggestions : EMPTY_SUGGESTIONS;
   const isExpanded = isPopupOpen && suggestions.length > 0;
+  // Keep an error on screen after blur so keyboard users can Tab from the input to Retry.
+  const isStatusVisible = hasQuery && (state.isOpen || search.state.status === 'error');
   // Indexing yields undefined when results changed under a stale index, which safely clears it.
   const activeSuggestion =
     isExpanded && state.activeIndex !== null ? suggestions[state.activeIndex] : undefined;
@@ -65,6 +69,13 @@ export function CityCombobox(): JSX.Element {
     }
   };
 
+  const handleRetry = (): void => {
+    search.retry();
+    dispatch({ type: 'opened' });
+    // The Retry button disappears once loading starts; return focus to where the results will appear.
+    inputRef.current?.focus();
+  };
+
   const handleBlur = (): void => {
     dispatch({ type: 'closed' });
   };
@@ -76,6 +87,7 @@ export function CityCombobox(): JSX.Element {
       </label>
       <div className="city-combobox__field">
         <input
+          ref={inputRef}
           id={inputId}
           type="text"
           role="combobox"
@@ -103,6 +115,12 @@ export function CityCombobox(): JSX.Element {
           onSelect={handleSelect}
         />
       </div>
+      <SearchStatus
+        state={search.state}
+        query={debouncedQuery.trim()}
+        isVisible={isStatusVisible}
+        onRetry={handleRetry}
+      />
       {state.selected !== null && (
         <p className="city-combobox__selection">
           Selected: <strong>{state.selected.name}</strong> ({state.selected.city})
