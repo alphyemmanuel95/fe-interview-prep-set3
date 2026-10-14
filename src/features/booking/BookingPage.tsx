@@ -22,7 +22,7 @@ function getPrimaryActionLabel(step: BookingStep, isSubmitting: boolean): string
 
 export function BookingPage(): JSX.Element {
   const today = useLocalToday();
-  const [state, dispatch] = useBookingDraft();
+  const [state, dispatch] = useBookingDraft(today);
   const submit = useBookingSubmission(dispatch);
   const { draft, failedNextAttempts, submission } = state;
   const stepHeadingRef = useFocusOnChange<HTMLHeadingElement>(draft.step);
