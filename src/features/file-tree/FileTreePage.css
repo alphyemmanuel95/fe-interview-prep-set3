@@ -1,3 +1,8 @@
+.file-tree {
+  --file-tree-search-width: 28rem;
+  --file-tree-panel-max-height: 70vh;
+}
+
 .file-tree__intro {
   max-width: 60ch;
   color: var(--color-text-muted);
@@ -6,7 +11,7 @@
 .file-tree__search {
   display: grid;
   gap: var(--space-1);
-  max-width: 28rem;
+  max-width: var(--file-tree-search-width);
   margin-block-end: var(--space-3);
 }
 
@@ -30,7 +35,7 @@
 }
 
 .file-tree__panel {
-  max-height: 70vh;
+  max-height: var(--file-tree-panel-max-height);
   overflow: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);

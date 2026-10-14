@@ -1,5 +1,14 @@
+/* Component tokens: sizes and timings used by the tree and its rows, tuned in one place. */
 .tree {
   --tree-indent: 1.25rem;
+  --tree-row-min-height: 2.25rem;
+  --tree-toggle-size: 1.75rem;
+  --tree-status-font-size: 0.8125rem;
+  --tree-selected-marker-width: 3px;
+  --tree-selected-tint: 14%;
+  --tree-toggle-duration: 120ms;
+  --tree-spinner-size: 0.75rem;
+  --tree-spinner-period: 0.8s;
 }
 
 .tree__list {
@@ -8,7 +17,7 @@
   list-style: none;
 }
 
-/* The list itself is only focusable so clicks have a target; rows carry the visible focus. */
+/* The list is focusable only so clicks have a target; focus moves on to a row (useRovingFocus). */
 .tree__list:focus {
   outline: none;
 }
