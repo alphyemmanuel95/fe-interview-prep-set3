@@ -1,0 +1,21 @@
+# Claude Code harness — local only, never commit
+.claude
+CLAUDE.local.md
+
+# Dependencies / builds
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
