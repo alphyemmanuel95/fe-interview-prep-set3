@@ -1,6 +1,6 @@
 import { type JSX, type RefObject, useId } from 'react';
-import { type Expense, formatIsoDate } from './expenses';
-import { formatCents } from './money';
+import { type Expense, formatIsoDate } from '../model/expenses';
+import { formatCents } from '../model/money';
 import './ExpenseList.css';
 
 export type ExpenseListProps = Readonly<{

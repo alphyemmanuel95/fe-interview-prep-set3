@@ -1,6 +1,6 @@
 import { type JSX, useId } from 'react';
-import { formatMonth, type MonthKey, type MonthTotals } from './expenses';
-import { formatCents } from './money';
+import { formatMonth, type MonthKey, type MonthTotals } from '../model/expenses';
+import { formatCents } from '../model/money';
 import './MonthSummary.css';
 
 export type MonthSummaryProps = Readonly<{

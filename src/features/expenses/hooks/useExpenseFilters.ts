@@ -5,7 +5,7 @@ import {
   isCategoryFilter,
   isMonthKey,
   toMonthKey,
-} from './expenses';
+} from '../model/expenses';
 
 export type UseExpenseFiltersResult = Readonly<{
   filters: ExpenseFilters;

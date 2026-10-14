@@ -5,12 +5,12 @@ import {
   type ExpenseDraft,
   selectMonthTotals,
   selectVisibleExpenses,
-} from './expenses';
-import { ExpenseForm } from './ExpenseForm';
-import { ExpenseList } from './ExpenseList';
-import { MonthSummary } from './MonthSummary';
-import { useExpenseFilters } from './useExpenseFilters';
-import { useExpenses } from './useExpenses';
+} from './model/expenses';
+import { ExpenseForm } from './components/ExpenseForm';
+import { ExpenseList } from './components/ExpenseList';
+import { MonthSummary } from './components/MonthSummary';
+import { useExpenseFilters } from './hooks/useExpenseFilters';
+import { useExpenses } from './hooks/useExpenses';
 import './ExpensesPage.css';
 
 export function ExpensesPage(): JSX.Element {

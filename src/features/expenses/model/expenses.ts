@@ -1,4 +1,4 @@
-import { assertNever } from '../../shared/assertNever';
+import { assertNever } from '../../../shared/assertNever';
 import { parseAmountToCents } from './money';
 
 // Single source of truth for categories: adding one here updates the form, filter and breakdown.

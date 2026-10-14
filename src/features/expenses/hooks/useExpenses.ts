@@ -1,6 +1,6 @@
 import { useEffect, useReducer } from 'react';
-import { loadFromStorage, saveToStorage } from '../../shared/storage';
-import { type Expense, type ExpenseDraft, expensesReducer, isExpenseList } from './expenses';
+import { loadFromStorage, saveToStorage } from '../../../shared/storage';
+import { type Expense, type ExpenseDraft, expensesReducer, isExpenseList } from '../model/expenses';
 
 export type UseExpensesResult = Readonly<{
   expenses: readonly Expense[];

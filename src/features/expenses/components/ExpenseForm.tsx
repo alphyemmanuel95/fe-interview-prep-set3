@@ -9,8 +9,8 @@ import {
   isCategory,
   toIsoDate,
   validateExpense,
-} from './expenses';
-import { centsToAmountInput } from './money';
+} from '../model/expenses';
+import { centsToAmountInput } from '../model/money';
 import './ExpenseForm.css';
 
 export type ExpenseFormProps = Readonly<{
