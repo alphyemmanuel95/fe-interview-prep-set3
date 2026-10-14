@@ -41,6 +41,7 @@ const respondNeverUntilAborted: typeof fetch = (_input, init) =>
 const USER_EVENT_OPTIONS = { delay: null } as const;
 
 let fetchMock: ReturnType<typeof vi.fn<typeof fetch>>;
+const scrollIntoViewMock = vi.fn<Element['scrollIntoView']>();
 
 type SetupResult = Readonly<{
   user: ReturnType<typeof userEvent.setup>;
@@ -79,10 +80,17 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   fetchMock = vi.fn<typeof fetch>(respondFromFixtures);
   vi.stubGlobal('fetch', fetchMock);
+  // jsdom has no layout, so it doesn't implement scrollIntoView.
+  scrollIntoViewMock.mockReset();
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: scrollIntoViewMock,
+  });
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
 });
 
 describe('CityCombobox search', () => {
@@ -229,6 +237,17 @@ describe('CityCombobox keyboard and mouse', () => {
     expect(screen.getByRole('option', { name: 'Fidel Ortiz, Lima' })).toHaveAttribute(
       'aria-selected',
       'true',
+    );
+  });
+
+  it('scrolls the active option into view', async () => {
+    const { user } = await openWithResults();
+
+    await user.keyboard('{ArrowUp}');
+
+    expect(scrollIntoViewMock).toHaveBeenLastCalledWith({ block: 'nearest' });
+    expect(scrollIntoViewMock.mock.contexts.at(-1)).toBe(
+      screen.getByRole('option', { name: 'Fidel Ortiz, Lima' }),
     );
   });
 

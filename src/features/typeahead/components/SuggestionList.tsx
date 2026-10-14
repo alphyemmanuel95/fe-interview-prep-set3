@@ -15,6 +15,13 @@ type SuggestionListProps = Readonly<{
   onSelect: (suggestion: CitySuggestion) => void;
 }>;
 
+// Focus stays on the input (aria-activedescendant), so the browser won't scroll the active option
+// into view for us. A module-level callback has a stable identity, so React only calls it when
+// the ref moves to a different option, not on every render.
+const scrollIntoViewNearest = (option: HTMLDivElement | null): void => {
+  option?.scrollIntoView({ block: 'nearest' });
+};
+
 export function SuggestionList({
   id,
   labelId,
@@ -38,6 +45,7 @@ export function SuggestionList({
         return (
           <div
             key={suggestion.id}
+            ref={isActive ? scrollIntoViewNearest : undefined}
             id={toOptionId(id, suggestion.id)}
             role="option"
             // Explicit name so assistive tech hears "Name, City" rather than the run-together segments.
