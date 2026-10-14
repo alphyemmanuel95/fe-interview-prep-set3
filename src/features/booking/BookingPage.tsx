@@ -6,6 +6,7 @@ import { ErrorSummary } from './components/ErrorSummary';
 import { useBookingDraft } from './hooks/useBookingDraft';
 import { useBookingSubmission } from './hooks/useBookingSubmission';
 import { useFocusOnChange } from './hooks/useFocusOnChange';
+import { useFocusOnIncrease } from './hooks/useFocusOnIncrease';
 import { useLocalToday } from './hooks/useLocalToday';
 import { prepareBookingRequest } from './model/bookingRequest';
 import { BOOKING_STEPS, getStepNumber, STEP_LABELS } from './model/steps';
@@ -26,6 +27,8 @@ export function BookingPage(): JSX.Element {
   const submit = useBookingSubmission(dispatch);
   const { draft, failedNextAttempts, submission } = state;
   const stepHeadingRef = useFocusOnChange<HTMLHeadingElement>(draft.step);
+  // Declared after the heading focus so that, when both fire together, the error summary wins.
+  const errorSummaryRef = useFocusOnIncrease<HTMLDivElement>(failedNextAttempts);
   // Errors are derived from the live draft, so fixing a field clears its message immediately.
   const errors = failedNextAttempts > 0 ? validateStep(draft.step, draft, today) : [];
   const isSubmitting = submission.status === 'submitting';
@@ -80,7 +83,7 @@ export function BookingPage(): JSX.Element {
             </span>{' '}
             {STEP_LABELS[draft.step]}
           </h2>
-          {errors.length > 0 && <ErrorSummary errors={errors} focusKey={failedNextAttempts} />}
+          {errors.length > 0 && <ErrorSummary ref={errorSummaryRef} errors={errors} />}
           <BookingStepContent
             draft={draft}
             submission={submission}

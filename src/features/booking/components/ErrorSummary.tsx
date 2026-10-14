@@ -1,25 +1,17 @@
-import { useEffect, useRef } from 'react';
-import type { JSX } from 'react';
+import type { JSX, Ref } from 'react';
 import type { FieldError } from '../model/types';
 import './ErrorSummary.css';
 
 type ErrorSummaryProps = Readonly<{
   errors: readonly FieldError[];
-  /** Changes on every blocked "Next" so focus returns here even if the summary is already shown. */
-  focusKey: number;
+  /** The page focuses the summary after a blocked "Next"; the summary never focuses itself. */
+  ref: Ref<HTMLDivElement>;
 }>;
 
-export function ErrorSummary({ errors, focusKey }: ErrorSummaryProps): JSX.Element {
-  const summaryRef = useRef<HTMLDivElement>(null);
-
-  // Moving focus to the summary tells keyboard and screen reader users why nothing happened.
-  useEffect(() => {
-    summaryRef.current?.focus();
-  }, [focusKey]);
-
+export function ErrorSummary({ errors, ref }: ErrorSummaryProps): JSX.Element {
   return (
     <div
-      ref={summaryRef}
+      ref={ref}
       className="error-summary"
       role="alert"
       tabIndex={-1}

@@ -71,6 +71,23 @@ describe('BookingPage', () => {
     expect(screen.getByLabelText('Event')).toHaveAccessibleDescription('Error: Choose an event.');
   });
 
+  it('keeps focus in the field while the error summary disappears and returns', async () => {
+    const { user } = setup();
+    await completeEventStep(user);
+    await selectSeats(user, ['A1']);
+    await clickNext(user);
+    await clickNext(user);
+    const nameInput = screen.getByLabelText(/seat A1/);
+
+    await user.click(nameInput);
+    await user.type(nameInput, 'A');
+    expect(screen.queryByText('Fix the following to continue')).not.toBeInTheDocument();
+    await user.type(nameInput, '{Backspace}');
+
+    expect(screen.getByText('Fix the following to continue')).toBeInTheDocument();
+    expect(nameInput).toHaveFocus();
+  });
+
   it('rejects a past date', async () => {
     const { user } = setup();
     await user.selectOptions(screen.getByLabelText('Event'), 'Jazz Night');
